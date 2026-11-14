@@ -158,6 +158,29 @@ test('personal minutes: defaults, zero, maximum and strict validation',()=>{
  }
 });
 
+test('easy choices provide independent valid estimates without changing service defaults',()=>{
+ const tc=load().TimeCalculator;
+ const presets=tc.getDeparturePresets();
+ assert.equal(tc.defaultDeparturePresetId,'relaxed');
+ assert.deepEqual(Array.from(presets,p=>p.id),['standard','relaxed','resting']);
+ for(const preset of presets) assert.doesNotThrow(()=>tc.normalizeDepartureMinutes(preset.minutes));
+ assert.deepEqual(JSON.parse(JSON.stringify(tc.normalizeDepartureMinutes(presets[1].minutes))),{walk:10,entry:5,exit:5,buffer:10});
+ presets[1].minutes.walkToStationMinutes=999;
+ assert.equal(tc.getDeparturePresets()[1].minutes.walkToStationMinutes,10,'one consumer cannot mutate later selections');
+ assert.equal(tc.normalizeDepartureMinutes().walk,7,'existing chat and external callers keep existing defaults');
+});
+
+test('every easy choice reaches the live API without AI-generated changes to route duration',async()=>{
+ for(const preset of load().TimeCalculator.getDeparturePresets()){
+  const {f,tc,slug}=await setup();
+  await tc.calculateDepartureLive({originId:slug(31),destId:slug(32),arriveBy:'12:00',fetch:f,...preset.minutes});
+  const body=f.calls.find(c=>c.key==='POST /api/departure-time').body;
+  assert.deepEqual([body.walk_to_station_minutes,body.station_entry_minutes,body.exit_walk_minutes,body.buffer_minutes],
+   [preset.minutes.walkToStationMinutes,preset.minutes.stationEntryMinutes,preset.minutes.exitWalkMinutes,preset.minutes.bufferMinutes]);
+  assert.equal(body.travel_minutes,F.r32.response.total_minutes);
+ }
+});
+
 test('personal live minutes are sent exactly, including zero, and now-mode crosses KST midnight',async()=>{
  const {f,tc,slug}=await setup();
  const opts={walkToStationMinutes:20,stationEntryMinutes:0,exitWalkMinutes:12,bufferMinutes:15};

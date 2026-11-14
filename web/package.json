@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:auth": "vite --mode auth --host 127.0.0.1 --port 5173 --strictPort",
+    "build:auth": "tsc -b && vite build --mode auth",
     "build": "tsc -b && vite build",
     "build:mock": "tsc -b && vite build --mode mock",
     "preview": "vite preview",

@@ -18,7 +18,7 @@ export function readPreferences(): Preferences | null {
     const value = JSON.parse(localStorage.getItem(PREFERENCES_KEY) || 'null')
     if (!value || value.version !== 1 || !FONTSIZE_LEVELS.includes(value.font)) return null
     if (!['contrast', 'simple', 'touch', 'motion', 'stepFree'].every((key) => typeof value[key] === 'boolean')) return null
-    return { font: readFontSize(), contrast: value.contrast, simple: value.simple, touch: value.touch, motion: value.motion, stepFree: value.stepFree }
+    return { font: value.font, contrast: value.contrast, simple: value.simple, touch: value.touch, motion: value.motion, stepFree: value.stepFree }
   } catch { return null }
 }
 

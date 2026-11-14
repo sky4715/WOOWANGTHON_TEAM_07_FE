@@ -4,7 +4,11 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useApp } from '../../app/context'
 import { Icon } from '../../components/Icon'
 import type { ChatAction, ChatResponse } from '../../legacy/globals'
-import { apiMode, mapCall, safe } from '../../lib/stations'
+import { allStations, apiMode, mapCall, safe } from '../../lib/stations'
+import { useElevatorVersion } from '../../hooks/useElevatorService'
+import { useSession } from '../account/authStore'
+import { useFavorites } from '../account/favorites'
+import { favoriteSuggestions } from './favoriteSuggestions'
 import { VoiceInput } from './voice/recognition/VoiceInput'
 import { SpeechControls, SpeechSettings, useChatSpeech } from './voice/tts'
 import { responseSpeechText } from './responseSpeechText'
@@ -30,6 +34,10 @@ function initialWelcome(): Msg[] {
 }
 
 export function ChatView() {
+  const session = useSession()
+  const favorites = useFavorites()
+  useElevatorVersion()
+  const personalSuggestions = session ? favoriteSuggestions(favorites, allStations()) : []
   const { currentTab, subscribeTabChange, openStation, openTime, toast, pendingChat, clearPendingChat } = useApp()
   const [msgs, setMsgs] = useState<Msg[]>(initialWelcome)
   const [suggestions, setSuggestions] = useState<string[]>(() => {
@@ -180,7 +188,14 @@ export function ChatView() {
         <details className="chat-voice-settings"><summary>음성 설정</summary><SpeechSettings speech={speech} /></details>
         <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
         <div id="chatSuggestions" className="chip-row chat-suggestions">
-          {suggestions.map((t, i) => (
+          {personalSuggestions.map((suggestion) => (
+            <button key={suggestion.id} type="button" className="chip" data-favorite-station={suggestion.id}
+              data-suggest={suggestion.prompt} disabled={busy || listening}
+              onClick={() => { if (!busyRef.current) send(suggestion.prompt) }}>
+              <Icon name="star" />{suggestion.label}
+            </button>
+          ))}
+          {suggestions.filter((t) => !personalSuggestions.some((s) => s.prompt === t)).map((t, i) => (
             <button key={t + i} type="button" className="chip" data-suggest={t} disabled={busy || listening} onClick={() => { if (!busyRef.current) send(t) }}>{t}</button>
           ))}
         </div>

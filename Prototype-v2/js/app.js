@@ -1326,11 +1326,26 @@
   }
 
   var departureMinuteFields = [
-    { id: 'walkToStationMinutes', label: '역까지 이동', max: 120, value: 7 },
-    { id: 'stationEntryMinutes', label: '역 안에서 승강장까지', max: 120, value: 3 },
-    { id: 'exitWalkMinutes', label: '도착역에서 목적지까지', max: 120, value: 3 },
-    { id: 'bufferMinutes', label: '추가 여유시간', max: 240, value: 5 }
+    { id: 'walkToStationMinutes', label: '역까지 이동', max: 120 },
+    { id: 'stationEntryMinutes', label: '역 안에서 승강장까지', max: 120 },
+    { id: 'exitWalkMinutes', label: '도착역에서 목적지까지', max: 120 },
+    { id: 'bufferMinutes', label: '추가 여유시간', max: 240 }
   ];
+
+  function departurePresets() {
+    var tc = TC();
+    return tc && tc.getDeparturePresets ? tc.getDeparturePresets() : [];
+  }
+
+  function applyDeparturePreset(id) {
+    var preset = departurePresets().filter(function (p) { return p.id === id; })[0];
+    if (!preset) return;
+    departureMinuteFields.forEach(function (f) {
+      var el = byId(f.id);
+      if (el) el.value = preset.minutes[f.id];
+    });
+    readDepartureMinutes(false);
+  }
 
   function invalidateTimeResult() {
     timeLiveSeq += 1;
@@ -1359,10 +1374,15 @@
       error.textContent = invalid ? invalid.field.label + ' 시간을 0~' + invalid.field.max + ' 사이의 정수(분)로 입력해 주세요.' : '';
     }
     var summary = byId('departureMinutesSummary');
+    var matchingPreset = invalid ? null : departurePresets().filter(function (p) {
+      return departureMinuteFields.every(function (f) { return opts[f.id] === p.minutes[f.id]; });
+    })[0];
+    $all('#departurePresetOptions [data-departure-preset]').forEach(function (button) {
+      button.setAttribute('aria-pressed', matchingPreset && matchingPreset.id === button.getAttribute('data-departure-preset') ? 'true' : 'false');
+    });
     if (summary) {
-      var defaults = departureMinuteFields.every(function (f) { return opts[f.id] === f.value; });
       summary.textContent = invalid ? '이동 시간 입력을 확인해 주세요.' :
-        (defaults ? '기본 추정값' : '직접 정한 시간') + ' · 역까지 ' + opts.walkToStationMinutes + '분 · 역 안 ' + opts.stationEntryMinutes + '분 · 하차 후 ' + opts.exitWalkMinutes + '분 · 여유 ' + opts.bufferMinutes + '분';
+        (matchingPreset ? matchingPreset.label + ' · 선택에 맞춘 예상값' : '직접 정한 시간') + ' · 역까지 ' + opts.walkToStationMinutes + '분 · 역 안 ' + opts.stationEntryMinutes + '분 · 하차 후 ' + opts.exitWalkMinutes + '분 · 여유 ' + opts.bufferMinutes + '분';
     }
     if (invalid && focusError) {
       var details = byId('departureMinutes');
@@ -1406,22 +1426,27 @@
     syncTimeMode();
 
     var form = byId('timeForm');
+    var presetOptions = byId('departurePresetOptions');
+    if (presetOptions) presetOptions.innerHTML = departurePresets().map(function (p) {
+      return '<button type="button" class="legacy-departure-preset" data-departure-preset="' + escapeHtml(p.id) + '" aria-pressed="false"><span class="legacy-departure-preset-title">' + escapeHtml(p.label) + '</span><span class="legacy-departure-help">' + escapeHtml(p.description) + '</span></button>';
+    }).join('');
+    applyDeparturePreset(TC() && TC().defaultDeparturePresetId);
     if (form) form.addEventListener('submit', function (e) { e.preventDefault(); submitTime(); });
     if (form) {
       form.addEventListener('input', function () { readDepartureMinutes(false); invalidateTimeResult(); });
       form.addEventListener('change', function () { readDepartureMinutes(false); invalidateTimeResult(); });
       form.addEventListener('click', function (e) {
-        var preset = e.target.closest('[data-departure-buffer]');
+        var preset = e.target.closest('[data-departure-preset]');
         if (preset) {
-          byId('bufferMinutes').value = preset.getAttribute('data-departure-buffer');
-          readDepartureMinutes(false); invalidateTimeResult();
+          applyDeparturePreset(preset.getAttribute('data-departure-preset'));
+          invalidateTimeResult();
         }
       });
     }
     var reset = byId('departureMinutesReset');
     if (reset) reset.addEventListener('click', function () {
-      departureMinuteFields.forEach(function (f) { var el = byId(f.id); if (el) el.value = f.value; });
-      readDepartureMinutes(false); invalidateTimeResult();
+      applyDeparturePreset(TC() && TC().defaultDeparturePresetId);
+      invalidateTimeResult();
     });
 
     var res = byId('timeResult');

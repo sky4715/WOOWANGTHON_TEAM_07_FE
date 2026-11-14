@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -31,13 +31,27 @@ function legacyAssets(): Plugin {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), legacyAssets()],
-  server: { port: 5173, host: '127.0.0.1' },
-  preview: { port: 4173, host: '127.0.0.1' },
-  test: {
-    environment: 'jsdom',
-    include: ['src/**/*.test.{ts,tsx}'],
-    setupFiles: ['src/test/setup.ts'],
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  // 명시적인 auth 명령은 기존 데모 설정과 관계없이 실제 로그인에 연결한다.
+  const authMode: Plugin = {
+    name: 'real-auth-mode',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html) => mode === 'auth' ? html
+        .replace("authMode: '%VITE_AUTH_MODE%'", 'authMode: "real"')
+        .replace("apiBase: '%VITE_API_BASE%'", 'apiBase: ' + JSON.stringify(env.VITE_API_BASE || env.VITE_BE_BASE || 'http://127.0.0.1:8000'))
+        : html,
+    },
+  }
+  return {
+    plugins: [react(), legacyAssets(), authMode],
+    server: { port: 5173, host: '127.0.0.1' },
+    preview: { port: 4173, host: '127.0.0.1' },
+    test: {
+      environment: 'jsdom',
+      include: ['src/**/*.test.{ts,tsx}'],
+      setupFiles: ['src/test/setup.ts'],
+    },
+  }
 })

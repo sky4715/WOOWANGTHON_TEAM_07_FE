@@ -76,6 +76,8 @@ export interface ElevatorServiceApi {
 }
 
 export interface TimeCalculatorApi {
+  getDeparturePresets(): Array<{ id: string; label: string; description: string; minutes: { walkToStationMinutes: number; stationEntryMinutes: number; exitWalkMinutes: number; bufferMinutes: number } }>
+  defaultDeparturePresetId: string
   findRoute(from: string, to: string): unknown
   calculateDeparture(opts: { originId: string; destId: string; arriveBy?: string | null; now?: Date; walkToStationMinutes?: number; stationEntryMinutes?: number; exitWalkMinutes?: number; bufferMinutes?: number }): Record<string, unknown> | null
   normalizeDepartureMinutes(opts?: Record<string, unknown>): { walk: number; entry: number; exit: number; buffer: number }
@@ -118,12 +120,15 @@ export interface AIAgentApi {
   reset(): void
 }
 
-export interface AuthSession { provider?: string; name?: string; [k: string]: unknown }
+export interface AuthSession { id?: string; provider?: string; name?: string; csrf_token?: string; [k: string]: unknown }
 export interface AuthServiceApi {
   getSession(): AuthSession | null | false
   login(provider: string): Promise<unknown> | unknown
   logout(): Promise<unknown> | unknown
   subscribe(fn: (session: AuthSession | null | false) => void): void
+  request?(path: string, options?: { method?: string; body?: unknown }): Promise<unknown>
+  refresh?(): Promise<unknown> | unknown
+  updateProfile?(name: string): Promise<unknown>
 }
 
 export interface AppConfig {
