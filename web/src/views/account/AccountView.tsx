@@ -53,6 +53,8 @@ export function AccountView() {
   const [favError, setFavError] = useState('')
   const [favLoading, setFavLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [loginPending, setLoginPending] = useState(false)
+  const [loginError, setLoginError] = useState('')
   const savingRef = useRef(false)
   const [favEditMode, setFavEditMode] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
@@ -68,7 +70,9 @@ export function AccountView() {
     const url = new URL(window.location.href)
     const error = url.searchParams.get('auth_error')
     if (!error) return
-    toast(error === 'cancelled' ? '로그인을 취소했어요.' : '로그인하지 못했어요. 다시 시도해 주세요.')
+    const message = error === 'cancelled' ? '로그인을 취소했어요.' : '로그인하지 못했어요. 다시 시도해 주세요.'
+    setLoginError(message)
+    toast(message)
     url.searchParams.delete('auth_error')
     window.history.replaceState(null, '', url.pathname + url.search + url.hash)
   }, [toast])
@@ -193,7 +197,15 @@ export function AccountView() {
       onClick={(e) => {
         const target = e.target as Element
         const provBtn = target.closest('[data-provider]')
-        if (provBtn && provBtn.classList.contains('auth-btn')) { Auth()?.login(provBtn.getAttribute('data-provider') || ''); return }
+        if (provBtn && provBtn.classList.contains('auth-btn')) {
+          if (loginPending) return
+          setLoginPending(true)
+          setLoginError('')
+          Promise.resolve(Auth()?.login(provBtn.getAttribute('data-provider') || '')).catch((error) => {
+            setLoginError(error instanceof Error ? error.message : '로그인에 연결하지 못했어요. 다시 시도해 주세요.')
+          }).finally(() => setLoginPending(false))
+          return
+        }
         if (target.closest('[data-auth="signout"]')) {
           Promise.resolve(Auth()?.logout()).then((ok) => toast(ok ? '로그아웃했습니다' : '로그아웃하지 못했어요. 다시 시도해 주세요.'))
         }
@@ -209,15 +221,17 @@ export function AccountView() {
               <p className="card-title">계정으로 시작하기</p>
               <p className="card-sub">자주 이용하는 역과 장소를 계정에 저장할 수 있습니다.</p>
               <div className="auth-buttons">
-                <button className="auth-btn auth-google" type="button" data-provider="google">
+                <button className="auth-btn auth-google" type="button" data-provider="google" disabled={loginPending}>
                   <span className="auth-btn-logo auth-google-logo" aria-hidden="true">G</span>
                   Google로 시작하기
                 </button>
-                <button className="auth-btn auth-kakao" type="button" data-provider="kakao">
+                <button className="auth-btn auth-kakao" type="button" data-provider="kakao" disabled={loginPending}>
                   <span className="auth-btn-logo auth-kakao-logo" aria-hidden="true">K</span>
                   카카오로 시작하기
                 </button>
               </div>
+              {loginPending && <p role="status">로그인 화면에 연결하고 있어요.</p>}
+              {loginError && <p role="alert">{loginError}</p>}
             </div>
           </div>
         </div>

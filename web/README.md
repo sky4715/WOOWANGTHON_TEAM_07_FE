@@ -8,7 +8,8 @@ Vite + React + TypeScript. `Prototype-v2`의 화면(`app.js`)을 React로 옮긴
 
 ```sh
 npm install
-npm run dev            # http://127.0.0.1:5173 (BE CORS_ALLOWED_ORIGINS, AI CORS_ALLOW_ORIGINS에 이 주소 필요)
+npm run dev            # http://127.0.0.1:5173, 실제 로그인 모드. 다른 포트로 자동 변경하지 않는다.
+npm run dev:mock       # 데모 인증·목업 데이터로 실행
 npm run build          # 타입 검사 + 빌드 (dist/, legacy 파일 복사 포함)
 npm test               # Vitest(jsdom). src/test/setup.ts가 legacy 서비스를 mock 모드로 불러온다
 npm run test:legacy    # 기존 노드 테스트(../tests/*.test.cjs)
@@ -18,7 +19,9 @@ npm run lint
 
 ## 실제 Google·카카오 로그인
 
-인증 키는 [BE 로그인 준비](../../BE/README.md#google카카오-로그인-준비)에 따라 **BE/.env에만** 넣는다. 제공자 콘솔의 콜백 URI 등록과 DB 마이그레이션 후 `npm.cmd run dev:auth`로 실행하면 실제 OAuth 로그인·서버 이름 변경·즐겨찾기 저장/복원을 사용한다. 일반 `dev`와 `--mode mock`은 기존 설정을 유지한다. 배포 빌드는 `npm.cmd run build:auth`, 공개 API 주소는 `VITE_API_BASE`와 `VITE_BE_BASE`로 지정한다.
+인증 키는 [BE 로그인 준비](../../BE/README.md#google카카오-로그인-준비)에 따라 **BE/.env에만** 넣는다. `npm.cmd run dev`와 `npm.cmd run build`는 실제 OAuth 로그인 모드다. `dev:auth`와 `build:auth`도 같은 모드의 별칭으로 유지한다. 데모 인증은 `npm.cmd run dev:mock`을 명시해서 실행한다. 공개 API 주소는 `VITE_API_BASE`와 `VITE_BE_BASE`로 지정한다.
+
+Google 버튼은 먼저 `/api/auth/providers`에서 키·저장소 준비 여부를 확인하고, 준비된 경우 실제 `/api/auth/google/login`으로 이동한다. 준비되지 않은 제공자나 저장소는 로그인 화면에서 설명한다. Google 코드 교환은 서버에서 수행하며 프론트엔드에는 Client Secret을 보내지 않는다. BE에 제공자 키가 있으면 `AUTH_FRONTEND_URL`의 정확한 Origin을 쿠키 요청에 자동 허용한다.
 
 개인 즐겨찾기는 서버 DB에 저장하며 실제 계정 캐시는 브라우저 메모리에만 둔다. 서버 저장 실패 시 성공 토스트를 띄우지 않는다. 401 응답은 비로그인 상태로 바꾸고 이전 계정 추천을 숨긴다. 로그아웃 요청 실패는 실패로 안내한다.
 
