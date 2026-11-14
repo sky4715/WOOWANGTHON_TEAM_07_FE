@@ -377,6 +377,17 @@
   // 모의 BFS·배차 모델은 쓰지 않는다. 실패해도 모의 계산으로 되돌아가지 않는다(대회 규칙: 시연에서 Mock 금지).
   // 오류는 Error(.code): 'UNMAPPED_STATION'(.slug), 'SAME_STATION', 'BAD_TIME', 또는 ApiClient 오류(NETWORK/TIMEOUT/NOT_FOUND/VALIDATION_ERROR, .status).
   var LIVE_MINUTES = { walk: 7, entry: 3, buffer: 5, exit: 3 }; // BE 기본값과 같다. 명시해서 보낸다(AI와 같은 방식)
+  // REQ-TIME-009: 선택만으로 채우는 계획용 예상값. 나이·진단·실제 거리를 추론한 값이 아니다.
+  function getDeparturePresets() {
+    return [
+      { id: 'standard', label: '보통으로 이동해요', description: '평소 속도로 이동할 수 있어요',
+        minutes: { walkToStationMinutes: 7, stationEntryMinutes: 3, exitWalkMinutes: 3, bufferMinutes: 5 } },
+      { id: 'relaxed', label: '천천히, 여유 있게 가요', description: '서두르지 않고 천천히 이동하고 싶어요',
+        minutes: { walkToStationMinutes: 10, stationEntryMinutes: 5, exitWalkMinutes: 5, bufferMinutes: 10 } },
+      { id: 'resting', label: '쉬어 가며 이동해요', description: '이동 중 잠깐씩 쉬는 시간이 필요해요',
+        minutes: { walkToStationMinutes: 15, stationEntryMinutes: 8, exitWalkMinutes: 8, bufferMinutes: 15 } }
+    ];
+  }
   // 몸 상태를 분류하거나 속도를 추정하지 않고, 사용자가 정한 구간별 분만 받는다.
   function normalizeDepartureMinutes(opts) {
     opts = opts || {};
@@ -608,6 +619,8 @@
   }
 
   window.TimeCalculator = {
+    getDeparturePresets: getDeparturePresets,
+    defaultDeparturePresetId: 'relaxed',
     normalizeDepartureMinutes: normalizeDepartureMinutes,
     findRoute: findRoute,
     calculateDeparture: calculateDeparture,

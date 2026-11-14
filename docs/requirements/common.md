@@ -418,28 +418,93 @@
 
 - #66 재통합 최종 검증: [디자인 보존/검증 기록](../design-reintegration-2026-11-15.md). 실제 경로 API 미연동 한계는 그대로다.
 
-### REQ-COM-011 랜딩·필요한 도움 선택·맞춤 화면
+### REQ-COM-011 랜딩에서 쉬운 화면·기본 화면 선택
 
 - 상태: 완료
 - 우선순위: P1
 - 등록일: 2026-11-15
 - 대상: `web/src/main.tsx`, `web/src/views/welcome/`
 
-**요구사항**
-첫 랜딩에서 서비스 목적을 안내하고, 어르신과 여러 불편이 있는 사용자가 자신의 필요를 복수 선택해 화면을 맞춘다. 개인의 복수 요구를 조합하는 범위로 구현하며 이용자 모집·서버 통계는 포함하지 않는다.
+**최종 요구사항**
+접속하면 랜딩 중앙에 서비스 로고를 배치하고 그 아래 ‘기본 화면으로 시작’과 ‘나에게 맞게 시작’을 보여준다. 질문 문구는 제거한다. 기본은 노선도로 즉시 들어가고 맞춤은 글자 크기·대비·버튼·움직임·첫 화면 구성을 선택한 뒤 별도의 메인으로 들어간다. 저장값이 있어도 루트 접속에서는 랜딩을 보여준다. 메인 상단 맞춤 설정 배너는 넣지 않는다.
 
 **완료 조건**
-- [x] 로그인 없는 랜딩·선택 건너뛰기·재방문 설정 복원
-- [x] 글자 크기·대비·터치·움직임 감소·쉬운 첫 화면의 조합
-- [x] 계단 이용이 어려운 사용자의 엘리베이터 확인 우선 안내
-- [x] 설정 취소 시 이전 화면과 작성 중인 내용 보존
-- [x] 다각도 사용자 분석·구현 한계·후속 사용자 평가 문서화
-- [x] TypeScript 빌드, React 테스트, Chromium에서 최대 글씨·모바일 화면 검증
+- [x] 랜딩의 두 가지 화면 선택을 즉시 노출
+- [x] 쉬운 화면은 큰 글씨·큰 버튼의 과업 중심 메인으로 진입
+- [x] 기본 화면은 기존 노선도 메인으로 진입
+- [x] 별도 주소와 화면 구조로 랜딩·쉬운 메인·기본 메인을 구분
+- [x] 브라우저 뒤로 가기·루트 재접속·저장 차단 처리
+- [x] 모바일 첫 화면에서 두 버튼 노출, 4개 화면 폭, 기능 연결 검증
 
 **작업 기록**
-- `Welcome.tsx`: 랜딩·도움 선택·쉬운 첫 화면 및 기존 앱 연결. 기존 앱은 설정 중에도 마운트를 유지한다.
-- `preferences.ts`, `welcome.css`: 설정 검증·저장 실패 처리, 기존 토큰 기반 맞춤 UI.
-- `welcome.test.tsx`: 복수 선택·저장 복원·취소·초기화·저장 실패 검증.
-- `web/scripts/verify-welcome.mjs`: 320/375/768/1440px, 기능 연결·입력 보존·기존 Prototype-v2 초기화 검증.
-- [분석 및 검증 범위](../inclusive-onboarding.md). 실제 참여자·보조기기 실기·현장 경로의 검증을 완료했다고 주장하지 않는다.
-- 2026-11-15 추가 피드백: 별도 상단의 ‘쉬운 첫 화면 / 화면 맞춤 설정’ 두 버튼을 제거했다. 랜딩의 소개·주요 동작을 중앙 정렬하고 같은 랜딩 안에서 설정을 펼친다. 진입 후에는 폰 콘텐츠 상단 중앙의 ‘내 화면 바꾸기’ 단일 버튼으로 랜딩의 설정에 돌아간다. 쉬운 첫 화면도 중앙에 배치한다. App/AppShell은 선택적인 진입 컴포넌트 슬롯으로 기존 기본 화면 구조를 유지한다.
+- 최종 추가 설명에 따라 사용자 맞춤 선택을 복원하고 로고 아래의 두 시작 동작으로 구성했다. 메인 설정 배너는 제거 상태를 유지한다.
+- `Welcome.tsx`: `#/` 로고 랜딩, `#/customize` 맞춤 설정, `#/easy` 기능 중심 메인, `#/main` 노선도 메인. 조합한 설정은 메인 진입 후에도 유지한다.
+- `welcome.css`: 중앙의 두 선택 카드, 쉬운 메인의 별도 배경·헤더, 기존 토큰 기반 큰 글씨·터치·움직임 감소.
+- `welcome.test.tsx`: 저장값과 관계없는 랜딩, 쉬운/기본 진입 분리, 저장 실패 검증.
+- `verify-welcome.mjs`: 320/375/768/1440px, 375×667px의 두 버튼 노출, 기능 연결·뒤로 가기·재접속 확인.
+- 빌드 및 관련 테스트 17개 통과. 실제 사용자·화면낭독기 실기 검증은 남아 있다.
+- [분석 및 검증 범위](../inclusive-onboarding.md).
+
+### REQ-COM-012 로그인·사용자별 정보 영구 저장
+
+- 상태: 완료 (로그인·영구 저장 구현 및 제공자 대체 통합 검증, 실제 키는 발급 후 확인)
+- 우선순위: P1
+- 등록일: 2026-11-15
+- 관련: REQ-COM-010, REQ-CHAT-008
+
+**요구사항**
+
+로그인한 사용자의 이름·즐겨찾기 역을 서버 DB에 저장하고 재로그인·다른 기기 접속 때 복원한다. 로그아웃은 화면의 개인 정보를 지우고 서버 세션을 폐기하며, 저장한 즐겨찾기 자체는 삭제하지 않는다. 다른 계정의 데이터가 섞이지 않아야 한다.
+
+**구현된 DB 스키마**
+
+기존 SQLite 역 마스터 `stations.station_id`를 참조한다. BE 모델·Alembic 마이그레이션 `d96e20b4a701`을 추가하고 임시 DB에 적용해 검증했다. 운영 DB에는 아직 적용하지 않았다.
+
+| 테이블 | 주요 필드 | 제약·용도 |
+|---|---|---|
+| `users` | `id` TEXT PK, `display_name` TEXT NOT NULL, `created_at`, `updated_at` | 서비스 내부 사용자 ID. 이름은 1~30자 |
+| `auth_identities` | `id` TEXT PK, `user_id` FK, `provider`, `provider_subject` | UNIQUE(`provider`, `provider_subject`), google/kakao. 이메일로 자동 병합하지 않음 |
+| `auth_sessions` | `token_hash` TEXT PK, `user_id` FK, `provider`, `csrf_token`, `created_at`, `expires_at` | DB에는 세션 해시만 저장. 원본은 HttpOnly·SameSite=Lax 쿠키, 배포는 Secure. 로그아웃은 행 삭제 |
+| `oauth_flows` | `state_hash` TEXT PK, `browser_hash`, `provider`, `verifier`, `expires_at` | 브라우저에 결합된 일회용 state, 10분 만료. Google PKCE |
+| `user_favorites` | `id` TEXT PK, `user_id` FK, `station_id` INTEGER NULL FK → `stations.station_id`, `place_name`, `alias`, `created_at`, `updated_at` | UNIQUE(`user_id`, `station_id`), 일반 장소는 역 ID 없이 보존. 사용자 삭제 CASCADE, 역 삭제 RESTRICT |
+
+- 사용자 FK는 모두 `users.id`를 참조한다. 사용자·인증 연결·세션은 계정 삭제 시 CASCADE한다. 시간은 BE 규칙대로 UTC 초 단위로 저장한다.
+- `auth_sessions(user_id, expires_at)`와 `user_favorites(user_id, created_at, id)`에 인덱스를 둔다. 글자 크기는 기존 브라우저 설정을 유지하며 서버 동기화는 이번 구현에 포함하지 않는다.
+- OAuth 로그인 시 일회용 `state`를 서버에서 검증한다. 해당 제공자가 지원하는 PKCE를 사용한다. 비밀번호·OAuth Secret·불필요한 제공자 토큰을 사용자 테이블에 저장하지 않는다.
+- 기존 즐겨찾기는 역이 아닌 자유 입력 장소도 허용한다. `placeName: 코엑스`를 특정 역으로 자동 변환하지 않는다. 기존 장소는 유지하고 정확히 확인된 역만 새 테이블로 저장한다.
+- FE slug와 BE 정수 역 ID는 기존 StationIdMap으로 변환한다. 표시 이름·별칭을 역 ID로 저장하지 않는다.
+
+**구현된 API**
+
+| 메서드·경로 | 요청·응답 |
+|---|---|
+| `GET /api/auth/{provider}/login` | 제공자 로그인으로 이동, 콜백에서 사용자 조회/생성 및 세션 쿠키 발급 |
+| `GET /api/auth/{provider}/callback` | state·인가 코드 검증 후 FE로 리다이렉트 |
+| `GET /api/auth/me` | `{ id, name, provider, csrf_token, limitations }`, 비로그인은 401 |
+| `PATCH /api/auth/profile` | `{ display_name }` → 최신 사용자 정보 |
+| `POST /api/auth/logout` | 현재 서버 세션 폐기·쿠키 삭제, 204 |
+| `GET /api/me/favorites` | `{ items: [{ id, station_id, place_name, alias }], limitations }` |
+| `POST /api/me/favorites` | `{ place_name, station_id?, alias? }` → 생성 항목, 201. 중복 역 409, 없는 역 404 |
+| `PATCH /api/me/favorites/{id}` | `{ alias? }` → 수정 항목 |
+| `DELETE /api/me/favorites/{id}` | 삭제 후 204 |
+
+- 사용자 ID는 인증된 서버 세션에서 얻는다. 요청 본문의 user_id는 받지 않는다. 다른 사용자 즐겨찾기 조회·수정·삭제는 404, 비로그인은 401이다.
+- 쿠키 요청은 FE의 `credentials: 'include'`와 허용된 Origin을 사용한다. 변경 요청에는 서버의 CSRF 검증을 적용한다.
+- 로그인/복원 시 서버 즐겨찾기를 불러온 후 개인화 추천을 표시한다. 로딩·401·로그아웃·계정 전환 때 기존 계정의 캐시를 즉시 비운다. 네트워크 실패를 빈 목록으로 덮어 저장하지 않는다.
+- AI로 이메일·세션 쿠키·인증 토큰을 보내지 않는다. 추천 클릭 시 필요한 실제 역명 질문만 현재 `/api/chat`으로 전송한다. 대화 전체 영구 저장은 이번 요구에 포함하지 않는다.
+
+**완료 조건**
+
+- [x] 현재 데모 세션/임시 저장의 한계 및 DB·API 초안을 기록
+- [x] BE 모델·Alembic 마이그레이션·인증·즐겨찾기 API 구현
+- [x] OAuth 라우터와 FE 서버 저장/복원 연결
+- [x] 재로그인·독립 세션 복원 및 계정 간 분리 자동 검증
+- [x] 세션 만료·로그아웃·CSRF·다른 계정 수정 차단 테스트
+
+**작업 기록**
+
+- 2026-11-15: 추가 요청으로 BE·FE 로그인을 구현했다. [키 설정·실행·콜백 등록](../../../BE/README.md#google카카오-로그인-준비), [API 계약](../../../BE/docs/api-contract.md#계정-api-추가-2026-11-15).
+- `dev:auth` / `build:auth`로 실제 인증 모드를 사용한다. 저장 실패를 성공으로 표시하지 않는다. 401·계정 변경 때 이전 추천을 숨기고 늦게 도착한 이전 요청을 버린다.
+- `BE/tests/test_auth.py`는 제공자 토큰·프로필 HTTP 응답만 대체해 보안·저장을 검증한다. `BE/tests/oauth_browser_server.py` + `web/scripts/verify-oauth.mjs`는 실제 API·DB·HttpOnly 쿠키로 Chrome 왕복·이름 저장·즐겨찾기 저장·새로고침·재로그인·제공자별 계정 분리·삭제를 검증했다.
+- **남은 설정/검증:** 실제 키 입력, 제공자 콘솔 Redirect URI/동의 화면 설정, 대상 DB 백업 후 마이그레이션 적용, 실제 제공자 로그인 확인. 키는 BE/.env에만 둔다. 운영 DB와 기존 .env는 변경하지 않았다.
+- 검증 결과: BE 전체 1,223개 통과·7개 건너뜀, React 89개 통과, 서비스 91개 통과, 실제 인증 빌드·린트 및 Chrome 통합 검증 통과. 제공자 테스트 서버는 새 `.tmp` DB만 허용하며 제품 실행에서는 사용하지 않는다.

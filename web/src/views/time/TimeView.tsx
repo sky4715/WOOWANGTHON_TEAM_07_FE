@@ -202,7 +202,6 @@ export function TimeView() {
               <input id="arriveBy" type="hidden" value={arriveByValue} readOnly />
             </div>
           </div>
-          <p className="departure-minutes-note">별도 입력이 없으면 역까지 7분, 역 안 3분, 하차 후 3분, 여유 5분의 추정값을 사용해요.</p>
           <DepartureMinutes value={minutes} onChange={changeMinutes} showErrors={showMinuteErrors} />
           <button className="btn btn-primary btn-block btn-main" type="submit" disabled={busy}>출발 시각 계산하기</button>
         </form>

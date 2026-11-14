@@ -16,7 +16,13 @@ npm run build:mock && npm run test:browser   # 기존 브라우저 테스트를 
 npm run lint
 ```
 
-## 외부 LLM 실제 호출 검증
+## 실제 Google·카카오 로그인
+
+인증 키는 [BE 로그인 준비](../../BE/README.md#google카카오-로그인-준비)에 따라 **BE/.env에만** 넣는다. 제공자 콘솔의 콜백 URI 등록과 DB 마이그레이션 후 `npm.cmd run dev:auth`로 실행하면 실제 OAuth 로그인·서버 이름 변경·즐겨찾기 저장/복원을 사용한다. 일반 `dev`와 `--mode mock`은 기존 설정을 유지한다. 배포 빌드는 `npm.cmd run build:auth`, 공개 API 주소는 `VITE_API_BASE`와 `VITE_BE_BASE`로 지정한다.
+
+개인 즐겨찾기는 서버 DB에 저장하며 실제 계정 캐시는 브라우저 메모리에만 둔다. 서버 저장 실패 시 성공 토스트를 띄우지 않는다. 401 응답은 비로그인 상태로 바꾸고 이전 계정 추천을 숨긴다. 로그아웃 요청 실패는 실패로 안내한다.
+
+## 외부 LLM 검증 실행
 
 실제 FactChat과 BE 데이터를 사용하는 별도 평가는 [외부 LLM 검증 기록](../docs/external-llm-validation-2026-11-15.md)을 따른다. API 사용량과 데이터 외부 전송이 발생하므로 승인된 환경에서 명시적 플래그로 실행한다.
 

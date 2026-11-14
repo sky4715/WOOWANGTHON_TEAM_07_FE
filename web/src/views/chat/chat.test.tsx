@@ -1,12 +1,32 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react'
 import App from '../../App'
+import { saveFavs } from '../account/favorites'
 
 const $ = (sel: string) => document.querySelector(sel) as HTMLElement | null
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); document.body.removeAttribute('data-active-tab') })
 
 describe('챗 탭', () => {
+  it('즐겨찾기 추가·변경·삭제와 로그아웃을 반영하고 실제 역명으로 전송한다', async () => {
+    const process = vi.spyOn(window.AIAgent, 'processMessage').mockResolvedValue({ text: '역 정보를 확인했어요.' })
+    act(() => { window.AuthService.login('google') })
+    render(<App />)
+    act(() => { saveFavs([{ id: '1', placeName: '강남역', alias: '회사' }]) })
+    expect($('#chatSuggestions [data-favorite-station="gangnam"]')?.textContent).toContain('회사 · 강남역')
+    fireEvent.click($('#chatSuggestions [data-favorite-station="gangnam"]')!)
+    await waitFor(() => expect(process).toHaveBeenCalledWith('강남역 엘리베이터 알려줘'))
+    await waitFor(() => expect($('#chatMessages .typing')).toBeNull())
+    act(() => { saveFavs([{ id: '1', placeName: '강남역', alias: '직장' }]) })
+    expect($('#chatSuggestions [data-favorite-station="gangnam"]')?.textContent).toContain('직장')
+    act(() => { saveFavs([]) })
+    expect($('#chatSuggestions [data-favorite-station]')).toBeNull()
+    act(() => { saveFavs([{ id: '1', placeName: '강남역' }]) })
+    act(() => { void window.AuthService.logout() })
+    expect($('#chatSuggestions [data-favorite-station]')).toBeNull()
+    expect($('#chatSuggestions .chip')).not.toBeNull()
+  })
+
   it('도구 호출 영역을 렌더링하지 않고 답변과 역 상세 버튼을 유지한다', async () => {
     vi.spyOn(window.AIAgent, 'processMessage').mockResolvedValue({
       text: '강남역 정보를 확인했어요.',

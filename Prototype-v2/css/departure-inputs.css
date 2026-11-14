@@ -11,3 +11,10 @@
 .legacy-departure-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-3) 0; }
 .legacy-departure-actions button, #departureMinutesReset { min-height: var(--tap-min); white-space: normal; }
 .legacy-departure-error { color: var(--bad-text); font-size: var(--fs-label); line-height: var(--lh-body); margin: var(--sp-2) 0; }
+.legacy-departure-preset-options { display: grid; gap: var(--sp-2); margin: var(--sp-3) 0; }
+.legacy-departure-preset { display: grid; gap: var(--sp-1); width: 100%; min-height: var(--tap-main); padding: var(--sp-3); text-align: left; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text); background: var(--surface); font-family: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.legacy-departure-preset-title { font-size: var(--fs-body); font-weight: var(--fw-strong); }
+.legacy-departure-preset .legacy-departure-help { margin: 0; }
+.legacy-departure-preset[aria-pressed="true"] { border-color: var(--primary-text); background: var(--primary-tint); box-shadow: inset 0 0 0 1px var(--primary-text); }
+.legacy-departure-preset[aria-pressed="true"] .legacy-departure-preset-title::before { content: '✓ '; }
+.legacy-departure-preset:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

@@ -6,7 +6,8 @@ import { Icon } from '../../components/Icon'
 import { Auth } from '../../legacy/services'
 import { useSession, touchAuth } from './authStore'
 import {
-  applyFontSize, genFavId, loadFavs, readFontSize, saveFavs,
+  applyFontSize, loadFavs, readFontSize, useFavorites, realAuth,
+  addFavorite, renameFavorite, deleteFavorite, fetchFavorites, clearFavorites,
   type Favorite, type FontLevel,
 } from './favorites'
 
@@ -18,14 +19,16 @@ const PROV_LABELS: Record<string, string> = { google: 'Google', kakao: '카카�
 
 function FavRenameRow({ fav, onDone, onToast }: { fav: Favorite; onDone: () => void; onToast: (m: string) => void }) {
   const ref = useRef<HTMLInputElement>(null)
+  const savingRef = useRef(false)
   useEffect(() => { ref.current?.focus(); ref.current?.select() }, [])
-  const commit = () => {
+  const commit = async () => {
     const val = (ref.current?.value ?? '').trim()
     if (!val) { onToast('이름을 입력해 주세요'); ref.current?.focus(); return }
-    const updated = loadFavs()
-    for (const f of updated) { if (f.id === fav.id) { f.alias = val; break } }
-    saveFavs(updated)
-    onDone()
+    if (savingRef.current) return
+    savingRef.current = true
+    try { await renameFavorite(fav.id, val); onDone() }
+    catch (error) { onToast(error instanceof Error ? error.message : '저장하지 못했어요.') }
+    finally { savingRef.current = false }
   }
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Enter') { e.preventDefault(); commit() }
@@ -46,7 +49,11 @@ export function AccountView() {
   const checking = session === null
   const signedIn = !!(session && typeof session === 'object')
 
-  const [favs, setFavs] = useState<Favorite[]>(() => loadFavs())
+  const favs = useFavorites()
+  const [favError, setFavError] = useState('')
+  const [favLoading, setFavLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const [favEditMode, setFavEditMode] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [addValue, setAddValue] = useState('')
@@ -57,30 +64,51 @@ export function AccountView() {
   const addInputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    const error = url.searchParams.get('auth_error')
+    if (!error) return
+    toast(error === 'cancelled' ? '로그인을 취소했어요.' : '로그인하지 못했어요. 다시 시도해 주세요.')
+    url.searchParams.delete('auth_error')
+    window.history.replaceState(null, '', url.pathname + url.search + url.hash)
+  }, [toast])
+
   // 글자 크기: 시작 때 저장값을 적용(index.html이 먼저 적용하지만 원본 initFontSize도 다시 쓴다)
   useEffect(() => { applyFontSize(readFontSize()) }, [])
   const pickFont = (level: string) => setFontSize(applyFontSize(level))
 
   // renderLoginTab: 세션이 바뀔 때마다
   useEffect(() => {
+    let cancelled = false
     if (session === null) return
+    setFavError('')
     if (!session) {
-      saveFavs([])
-      setFavs([])
+      clearFavorites()
+      setFavLoading(false)
       setAddOpen(false)
       setNameEditing(false)
       const s = getSheet()
       if (s.open && (s.mode === 'favDetail' || s.mode === 'filter')) closeSheet()
-    } else {
-      setFavs(loadFavs())
+    } else if (realAuth()) {
+      setFavLoading(true)
+      fetchFavorites().catch((error) => {
+        if (!cancelled) setFavError(error instanceof Error ? error.message : '즐겨찾기를 불러오지 못했어요.')
+      }).finally(() => { if (!cancelled) setFavLoading(false) })
     }
     setFavEditMode(false)
     setRenamingId(null)
+    return () => { cancelled = true }
   }, [session, getSheet, closeSheet])
 
   useLayoutEffect(() => { setLoginTabLabel(signedIn ? '마이페이지' : '로그인') }, [signedIn, setLoginTabLabel])
 
-  const refreshFavs = () => setFavs(loadFavs())
+  const refreshFavs = () => {
+    if (!realAuth()) return
+    setFavError('')
+    setFavLoading(true)
+    fetchFavorites().catch((error) => setFavError(error instanceof Error ? error.message : '즐겨찾기를 불러오지 못했어요.'))
+      .finally(() => setFavLoading(false))
+  }
 
   const openFavAdd = () => {
     if (!Auth()?.getSession()) return
@@ -89,28 +117,35 @@ export function AccountView() {
     requestAnimationFrame(() => addInputRef.current?.focus())
   }
   const closeFavAdd = () => { setAddOpen(false); setAddValue('') }
-  const commitFavAdd = () => {
+  const commitFavAdd = async () => {
     if (!Auth()?.getSession()) return
     const val = addValue.trim()
     if (!val) { toast('장소 이름을 입력해 주세요'); addInputRef.current?.focus(); return }
-    const list = loadFavs()
-    list.push({ id: genFavId(), placeName: val, alias: '' })
-    saveFavs(list)
-    closeFavAdd()
-    refreshFavs()
-    toast('"' + val + '" 즐겨찾기에 추가했어요')
+    if (savingRef.current || favLoading || favError) return
+    savingRef.current = true
+    setSaving(true)
+    try {
+      await addFavorite(val)
+      closeFavAdd()
+      toast('"' + val + '" 즐겨찾기에 추가했어요')
+    } catch (error) { toast(error instanceof Error ? error.message : '즐겨찾기를 저장하지 못했어요.') }
+    finally { savingRef.current = false; setSaving(false) }
   }
   const toggleFavEdit = () => {
     setFavEditMode((m) => !m)
     setRenamingId(null)
     closeFavAdd()
-    refreshFavs()
   }
-  const deleteFav = (id: string) => {
+  const deleteFav = async (id: string) => {
+    if (savingRef.current) return
+    savingRef.current = true
+    setSaving(true)
     const removed = loadFavs().find((f) => f.id === id)
-    saveFavs(loadFavs().filter((f) => f.id !== id))
-    refreshFavs()
-    if (removed) toast('"' + (removed.alias || removed.placeName) + '" 즐겨찾기에서 삭제했어요')
+    try {
+      await deleteFavorite(id)
+      if (removed) toast('"' + (removed.alias || removed.placeName) + '" 즐겨찾기에서 삭제했어요')
+    } catch (error) { toast(error instanceof Error ? error.message : '즐겨찾기를 삭제하지 못했어요.') }
+    finally { savingRef.current = false; setSaving(false) }
   }
   const openFav = (id: string) => {
     const target = loadFavs().find((f) => f.id === id)
@@ -136,9 +171,12 @@ export function AccountView() {
       cancelNameEdit()
       toast('이름을 변경했어요')
     } else if (sess) {
-      console.warn('[Auth:real] 사용자 이름 변경은 아직 백엔드 API가 연결되지 않았습니다. PATCH /api/auth/profile { displayName } 구현 필요.')
-      toast('백엔드 연결 후 저장됩니다 (현재 데모)')
-      cancelNameEdit()
+      if (savingRef.current) return
+      savingRef.current = true
+      setSaving(true)
+      Auth()?.updateProfile?.(val).then(() => { cancelNameEdit(); toast('이름을 변경했어요') })
+        .catch((error) => toast(error instanceof Error ? error.message : '이름을 저장하지 못했어요.'))
+        .finally(() => { savingRef.current = false; setSaving(false) })
     }
   }
 
@@ -157,7 +195,7 @@ export function AccountView() {
         const provBtn = target.closest('[data-provider]')
         if (provBtn && provBtn.classList.contains('auth-btn')) { Auth()?.login(provBtn.getAttribute('data-provider') || ''); return }
         if (target.closest('[data-auth="signout"]')) {
-          Promise.resolve(Auth()?.logout()).then(() => toast('로그아웃했습니다'))
+          Promise.resolve(Auth()?.logout()).then((ok) => toast(ok ? '로그아웃했습니다' : '로그아웃하지 못했어요. 다시 시도해 주세요.'))
         }
       }}
     >
@@ -169,7 +207,7 @@ export function AccountView() {
             <h2 className="view-title">로그인</h2>
             <div className="card auth-card">
               <p className="card-title">계정으로 시작하기</p>
-              <p className="card-sub">집·회사 위치와 즐겨찾기를 저장할 수 있습니다.</p>
+              <p className="card-sub">자주 이용하는 역과 장소를 계정에 저장할 수 있습니다.</p>
               <div className="auth-buttons">
                 <button className="auth-btn auth-google" type="button" data-provider="google">
                   <span className="auth-btn-logo auth-google-logo" aria-hidden="true">G</span>
@@ -223,8 +261,8 @@ export function AccountView() {
                 <Icon name="star" className="mypage-section-icon" />
                 <span className="mypage-section-title">즐겨찾기 장소</span>
                 <div className="fav-header-actions">
-                  <button id="favAddBtn" className="btn btn-sm btn-ghost" type="button" onClick={openFavAdd}><Icon name="add" />추가</button>
-                  <button id="favEditBtn" className="btn btn-sm btn-ghost" type="button" onClick={toggleFavEdit}>{favEditMode ? '완료' : '수정'}</button>
+                  <button id="favAddBtn" className="btn btn-sm btn-ghost" type="button" disabled={saving || favLoading || !!favError} onClick={openFavAdd}><Icon name="add" />추가</button>
+                  <button id="favEditBtn" className="btn btn-sm btn-ghost" type="button" disabled={saving || favLoading || !!favError} onClick={toggleFavEdit}>{favEditMode ? '완료' : '수정'}</button>
                 </div>
               </div>
               {/* 추가 입력 행 (기본 숨김) */}
@@ -234,7 +272,7 @@ export function AccountView() {
                   value={addValue} onChange={(e) => setAddValue(e.target.value)}
                   onKeyDown={(e) => { enter(commitFavAdd)(e); if (e.key === 'Escape') closeFavAdd() }}
                 />
-                <button id="favAddConfirm" className="btn btn-sm btn-primary" type="button" onClick={commitFavAdd}>저장</button>
+                <button id="favAddConfirm" className="btn btn-sm btn-primary" type="button" disabled={saving} onClick={commitFavAdd}>저장</button>
                 <button id="favAddCancel" className="btn btn-sm btn-ghost" type="button" onClick={closeFavAdd}>취소</button>
               </div>
               <ul id="favList" className="fav-list">
@@ -248,7 +286,7 @@ export function AccountView() {
                       {favEditMode && (
                         <div className="fav-edit-actions" style={renaming ? { display: 'none' } : undefined}>
                           <button className="btn btn-sm fav-rename-btn" type="button" data-fav-rename={fav.id} onClick={() => setRenamingId(fav.id)}>변경</button>
-                          <button className="btn btn-sm fav-delete-btn" type="button" data-fav-delete={fav.id} onClick={() => deleteFav(fav.id)}>삭제</button>
+                          <button className="btn btn-sm fav-delete-btn" type="button" disabled={saving} data-fav-delete={fav.id} onClick={() => deleteFav(fav.id)}>삭제</button>
                         </div>
                       )}
                       {!favEditMode && (
@@ -257,13 +295,15 @@ export function AccountView() {
                         </button>
                       )}
                       {renaming && (
-                        <FavRenameRow fav={fav} onToast={toast} onDone={() => { setRenamingId(null); refreshFavs() }} />
+                        <FavRenameRow fav={fav} onToast={toast} onDone={() => { setRenamingId(null) }} />
                       )}
                     </li>
                   )
                 })}
               </ul>
-              <p id="favEmptyMsg" className="mypage-empty-hint" hidden={favs.length > 0}>즐겨찾기한 장소가 없습니다.</p>
+              {favLoading && <p role="status">즐겨찾기를 불러오고 있어요.</p>}
+              {favError && <p role="alert">{favError} <button type="button" className="btn btn-sm btn-ghost" onClick={refreshFavs}>다시 불러오기</button></p>}
+              <p id="favEmptyMsg" className="mypage-empty-hint" hidden={favs.length > 0 || favLoading || !!favError}>즐겨찾기한 장소가 없습니다.</p>
             </div>
 
             {/* 글자 크기 설정 */}

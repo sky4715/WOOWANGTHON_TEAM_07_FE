@@ -25,6 +25,7 @@ describe('계정 탭', () => {
     click('#favAddBtn')
     type('#favAddInput', '코엑스')
     click('#favAddConfirm')
+    await act(async () => { await Promise.resolve() })
     expect($('.fav-primary').textContent).toBe('코엑스')
     expect(JSON.parse(sessionStorage.getItem('elevSubway.demoFavorites.v1')!)[0]).toMatchObject({ placeName: '코엑스', alias: '' })
 
@@ -32,6 +33,7 @@ describe('계정 탭', () => {
     click('.fav-rename-btn')
     type('.fav-item .fav-rename-input', '우리집')
     act(() => { fireEvent.keyDown($('.fav-item .fav-rename-input'), { key: 'Enter' }) })
+    await act(async () => { await Promise.resolve() })
     expect($('.fav-primary').textContent).toBe('우리집')
     click('#favEditBtn')
     click('.fav-detail-btn')

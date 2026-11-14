@@ -92,13 +92,31 @@
   // 모든 요청에 credentials: 'include' 적용 (HttpOnly 쿠키 연동).
   // 인증 실패 시 데모 로그인으로 자동 전환하지 않음.
   //
-  // 아래 경로는 제안 계약이며, 백엔드 구현 전까지 확정 아님:
+  // BE/app/routers/auth.py의 쿠키 기반 인증 API와 연결한다.
   //   GET  /api/auth/me
   //   GET  /api/auth/google/login
   //   GET  /api/auth/kakao/login
   //   POST /api/auth/logout
   // ═══════════════════════════════════════════════════════════
   var RealAdapter = {
+    request: function (path, options) {
+      options = options || {};
+      var headers = { 'Accept': 'application/json' };
+      if (options.body) headers['Content-Type'] = 'application/json';
+      if (session && session.csrf_token) headers['X-CSRF-Token'] = session.csrf_token;
+      return fetch(apiBase() + path, {
+        method: options.method || 'GET', credentials: 'include', headers: headers,
+        body: options.body ? JSON.stringify(options.body) : undefined
+      }).then(function (res) {
+        if (res.status === 401) setSession(false);
+        if (!res.ok) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            throw new Error((data.error && data.error.message) || '요청에 실패했어요. 다시 시도해 주세요.');
+          });
+        }
+        return res.status === 204 ? null : res.json();
+      });
+    },
     init: function () {
       return fetch(apiBase() + '/api/auth/me', {
         method: 'GET',
@@ -109,8 +127,7 @@
           return res.json().then(function (data) { setSession(data || false); });
         }
         setSession(false);
-      }).catch(function (err) {
-        console.warn('[Auth:real] /api/auth/me 실패:', err.message || err);
+      }).catch(function () {
         setSession(false);
         // ⚠️ 실패 시 데모 모드로 자동 전환하지 않음
       });
@@ -126,17 +143,18 @@
     },
 
     logout: function () {
-      return fetch(apiBase() + '/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Accept': 'application/json' }
-      }).then(function (res) {
+      return RealAdapter.request('/api/auth/logout', { method: 'POST' }).then(function () {
         setSession(false);
-        return res.ok;
-      }).catch(function (err) {
-        console.warn('[Auth:real] /api/auth/logout 실패:', err.message || err);
-        setSession(false);
-        return false;
+        return true;
+      }).catch(function () {
+        // 서버 폐기를 확인하지 못하면 로그아웃 성공으로 표시하지 않는다.
+        return session === false;
+      });
+    },
+    updateProfile: function (name) {
+      return RealAdapter.request('/api/auth/profile', { method: 'PATCH', body: { display_name: name } }).then(function (data) {
+        setSession(data);
+        return data;
       });
     }
   };
@@ -160,6 +178,9 @@
     getSession: getSession,
     login:      login,
     logout:     logout,
+    request:    function (path, options) { return RealAdapter.request(path, options); },
+    refresh:    function () { return adapter.init(); },
+    updateProfile: function (name) { return RealAdapter.updateProfile(name); },
     subscribe:  subscribe
   };
   adapter.init();
