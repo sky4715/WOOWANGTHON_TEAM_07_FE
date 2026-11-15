@@ -3,37 +3,19 @@
   --welcome-form-width: 44rem;
   --welcome-touch: 56px;
   --welcome-choice-width: 52rem;
-  --welcome-choice-icon: 32px;
-  --welcome-logo-size: 88px;
+  --ieum-navy: #172C54;
+  --ieum-landing-logo-width: clamp(240px, 70vw, 440px);
+  --ieum-choice-width: 26rem;
 }
 .welcome-app { height: 100%; }
 .welcome-shell, .easy-main-shell { position: fixed; inset: 0; overflow: auto; padding: var(--sp-6); padding-bottom: calc(var(--sp-6) + var(--safe-bottom)); color: var(--text); }
 .welcome-shell { display: flex; flex-direction: column; background: var(--surface); }
-.welcome-header, .welcome-main, .welcome-footer { width: 100%; max-width: var(--welcome-width); margin-inline: auto; }
+.welcome-header { width: 100%; max-width: var(--welcome-width); margin-inline: auto; }
 .welcome-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-4); }
 .welcome-brand { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); min-height: var(--tap-main); font-weight: var(--fw-bold); }
 .welcome-mark { display: grid; place-items: center; width: var(--tap-main); height: var(--tap-main); border-radius: var(--radius-sm); color: var(--on-primary); background: var(--primary); font-size: var(--fs-heading); }
 .welcome-tag, .welcome-eyebrow { color: var(--primary-text); font-size: var(--fs-label); font-weight: var(--fw-strong); }
-.welcome-main { flex: 1; display: grid; align-items: center; padding-block: var(--sp-8); }
-.welcome-intro { width: 100%; text-align: center; }
-.welcome-main h1 { font-size: clamp(var(--fs-heading), 5vw, var(--fs-hero)); line-height: var(--lh-title); margin-block: var(--sp-4) var(--sp-5); }
-.welcome-main h1 span { color: var(--primary-text); }
-.welcome-main h1:focus, .easy-main-content h1:focus { outline: none; }
 .welcome-lead { color: var(--text-2); font-size: var(--fs-body); line-height: var(--lh-body); }
-.mode-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-5); max-width: var(--welcome-choice-width); margin: var(--sp-8) auto var(--sp-5); }
-.mode-choice { display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); padding: var(--sp-6); min-height: var(--welcome-touch); border: 2px solid var(--primary); border-radius: var(--radius-lg); text-align: center; }
-.mode-choice-custom { background: var(--primary); color: var(--on-primary); }
-.mode-choice-basic { background: var(--primary-tint); color: var(--primary-text); }
-.mode-choice:hover { box-shadow: var(--shadow); border-color: var(--focus); }
-.mode-choice svg { width: var(--welcome-choice-icon); height: var(--welcome-choice-icon); }
-.mode-choice strong { font-size: var(--fs-heading); line-height: var(--lh-title); }
-.mode-choice > span { font-size: var(--fs-body); }
-.mode-choice .mode-choice-action { padding-top: var(--sp-3); font-size: var(--fs-label); font-weight: var(--fw-strong); }
-.welcome-hint, .welcome-footer { color: var(--text-2); font-size: var(--fs-label); }
-.welcome-footer { padding-top: var(--sp-5); text-align: center; }
-.welcome-main .landing-logo { display: flex; flex-direction: column; align-items: center; gap: var(--sp-5); color: var(--text); font-size: var(--fs-display); margin: 0 0 var(--sp-4); }
-.landing-logo .landing-logo-mark { display: grid; place-items: center; width: var(--welcome-logo-size); height: var(--welcome-logo-size); background: var(--primary); color: var(--on-primary); border-radius: var(--radius-lg); }
-.landing-logo-mark svg { width: 70%; height: 70%; }
 .customize-main { width: 100%; max-width: var(--welcome-form-width); margin-inline: auto; }
 .customize-main h1 { font-size: var(--fs-heading); margin-block: var(--sp-5) var(--sp-3); }
 .customize-main h1:focus { outline: none; }
@@ -73,12 +55,25 @@ html[data-access-motion] *, html[data-access-motion] *::before, html[data-access
 @media (max-width: 700px) {
   .welcome-shell, .easy-main-shell { padding: var(--sp-4); padding-bottom: calc(var(--sp-4) + var(--safe-bottom)); }
   .welcome-tag { display: none; }
-  .welcome-main { padding-block: var(--sp-5); }
-  .mode-choices, .welcome-tasks { grid-template-columns: 1fr; }
-  .mode-choices { gap: var(--sp-3); margin-block: var(--sp-5); }
-  .mode-choice { padding: var(--sp-4); gap: var(--sp-2); }
-  .mode-choice svg { display: none; }
-  .mode-choice strong { font-size: var(--fs-title); }
-  .mode-choice .mode-choice-action { display: none; }
+  .welcome-tasks { grid-template-columns: 1fr; }
   .welcome-tasks button { padding: var(--sp-4); }
 }
+.welcome-hint { color: var(--text-2); font-size: var(--fs-label); }
+.easy-main-content h1:focus, .customize-main h1:focus { outline: none; }
+.easy-main-links { display: inline-flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+/* 이음 랜딩: 로고와 두 선택 버튼만 둔다 (#92) */
+.welcome-shell.ieum-landing { align-items: center; padding: var(--sp-4); padding-bottom: calc(var(--sp-8) + var(--safe-bottom)); background: linear-gradient(180deg, var(--surface) 0%, var(--primary-tint) 100%); }
+.ieum-landing-main { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: var(--welcome-width); min-height: 0; }
+.ieum-landing-logo { flex: 1; display: grid; place-items: center; width: 100%; margin: 0; padding-block: var(--sp-8); }
+.ieum-landing-logo:focus { outline: none; }
+.ieum-landing-logo .ieum-logo { width: var(--ieum-landing-logo-width); height: auto; }
+.ieum-mode-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); width: min(100%, var(--ieum-choice-width)); }
+.ieum-mode-btn { display: grid; place-items: center; min-height: var(--welcome-touch); padding: var(--sp-3) var(--sp-4); border: 2px solid var(--ieum-navy); border-radius: var(--radius-sm); font-size: var(--fs-title); font-weight: var(--fw-bold); line-height: var(--lh-title); text-align: center; cursor: pointer; transition: transform .15s var(--ease), background-color .15s var(--ease), box-shadow .15s var(--ease); }
+.ieum-mode-basic { color: var(--ieum-navy); background: var(--surface); }
+.ieum-mode-easy { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
+.ieum-mode-basic:hover { background: var(--primary-tint); }
+.ieum-mode-easy:hover { background: var(--primary-press); border-color: var(--primary-press); }
+.ieum-mode-btn:hover { box-shadow: var(--shadow); }
+.ieum-mode-btn:active { transform: scale(.98); }
+.ieum-mode-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import Welcome from './Welcome'
 import { PREFERENCES_KEY, readPreferences } from './preferences'
 
@@ -12,36 +12,51 @@ afterEach(() => {
   for (const key of ['contrast', 'touch', 'motion']) document.documentElement.removeAttribute('data-access-' + key)
   vi.restoreAllMocks()
 })
-it('접속하면 저장된 설정과 관계없이 랜딩에 두 가지 화면 선택을 보여준다', () => {
+it('접속하면 저장된 설정과 관계없이 이음 로고와 두 화면 선택만 보여준다', () => {
   localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ version: 1, font: 'lg', simple: true, contrast: false, touch: true, motion: true, stepFree: false }))
   render(<Welcome />)
-  expect(screen.getByRole('button', { name: /나에게 맞게 시작/ })).toBeTruthy()
-  expect(screen.getByRole('heading', { name: '엘리베이터 지하철' })).toBeTruthy()
-  expect(screen.queryByText(/어떤 화면으로/)).toBeNull()
-  expect(screen.getByRole('button', { name: /기본 화면으로 시작/ })).toBeTruthy()
+  expect(screen.getByRole('heading', { name: /이음/ })).toBeTruthy()
+  const group = screen.getByRole('group', { name: '이용할 화면 선택' })
+  const buttons = within(group).getAllByRole('button')
+  expect(buttons.map((button) => button.textContent)).toEqual(['기본 화면', '쉬운 화면'])
+  // 설명 문구·푸터·예전 서비스명·카드형 선택은 없다
+  expect(screen.queryByText('엘리베이터 지하철')).toBeNull()
+  expect(screen.queryByText(/마중/)).toBeNull()
+  expect(document.querySelector('.welcome-footer')).toBeNull()
+  expect(screen.queryByText(/로그인 없이/)).toBeNull()
+  expect(screen.queryByRole('button', { name: /나에게 맞게 시작/ })).toBeNull()
   expect(document.querySelector('#phone')).toBeNull()
   expect(document.querySelector('.welcome-tasks')).toBeNull()
 })
-it('맞춤 설정을 조합한 뒤 메인으로 들어가도 설정을 유지한다', () => {
+it('쉬운 화면은 쉬운 설정을 적용해 쉬운 홈으로 들어가고 맞춤 설정도 열 수 있다', () => {
   render(<Welcome />)
-  fireEvent.click(screen.getByRole('button', { name: /나에게 맞게 시작/ }))
+  fireEvent.click(screen.getByRole('button', { name: '쉬운 화면' }))
+  expect(window.location.hash).toBe('#/easy')
+  expect(screen.getByRole('heading', { name: '무엇을 도와드릴까요?' })).toBeTruthy()
+  expect(document.querySelector('[data-page="landing"]')).toBeNull()
+  expect(readPreferences()).toMatchObject({ simple: true, font: 'lg', touch: true, motion: true })
+  fireEvent.click(screen.getByRole('link', { name: '화면 맞춤 설정' }))
   expect(window.location.hash).toBe('#/customize')
   fireEvent.click(screen.getByRole('radio', { name: '아주 크게' }))
   fireEvent.click(screen.getByRole('checkbox', { name: /높은 대비/ }))
   fireEvent.click(screen.getByRole('button', { name: /이 설정으로 시작/ }))
   expect(window.location.hash).toBe('#/easy')
-  expect(screen.getByRole('heading', { name: '무엇을 도와드릴까요?' })).toBeTruthy()
-  expect(screen.queryByRole('button', { name: /기본 화면으로 시작/ })).toBeNull()
-  expect(document.querySelector('[data-page="landing"]')).toBeNull()
   expect(readPreferences()).toMatchObject({ simple: true, font: 'xl', touch: true, contrast: true })
   expect(document.documentElement.getAttribute('data-fontsize')).toBe('xl')
   expect(document.documentElement.hasAttribute('data-access-contrast')).toBe(true)
   fireEvent.click(screen.getByRole('link', { name: '화면 다시 선택' }))
-  expect(screen.getByRole('button', { name: /기본 화면으로 시작/ })).toBeTruthy()
+  expect(screen.getByRole('button', { name: '기본 화면' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: '쉬운 화면' })).toBeTruthy()
+})
+it('이미 저장한 쉬운 설정은 쉬운 화면을 다시 골라도 덮어쓰지 않는다', () => {
+  localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ version: 1, font: 'max', simple: true, contrast: true, touch: true, motion: true, stepFree: false }))
+  render(<Welcome />)
+  fireEvent.click(screen.getByRole('button', { name: '쉬운 화면' }))
+  expect(readPreferences()).toMatchObject({ simple: true, font: 'max', contrast: true })
 })
 it('기본 화면은 추가 설정 없이 노선도로 들어가고 맞춤 설정 배너를 노출하지 않는다', () => {
   render(<Welcome />)
-  fireEvent.click(screen.getByRole('button', { name: /기본 화면으로 시작/ }))
+  fireEvent.click(screen.getByRole('button', { name: '기본 화면' }))
   expect(window.location.hash).toBe('#/main')
   expect(document.querySelector('#view-map.active')).toBeTruthy()
   expect(document.querySelector('[data-page="landing"]')).toBeNull()
@@ -49,11 +64,19 @@ it('기본 화면은 추가 설정 없이 노선도로 들어가고 맞춤 설�
   expect(document.querySelector('.easy-navigation')).toBeNull()
   expect(readPreferences()).toMatchObject({ simple: false, font: 'normal', touch: false })
 })
+it('버튼을 연달아 눌러도 설정 저장과 이동은 한 번만 일어난다', () => {
+  render(<Welcome />)
+  const save = vi.spyOn(Storage.prototype, 'setItem')
+  const basic = screen.getByRole('button', { name: '기본 화면' })
+  fireEvent.click(basic)
+  fireEvent.click(basic)
+  expect(save.mock.calls.filter(([key]) => key === PREFERENCES_KEY)).toHaveLength(1)
+  expect(window.location.hash).toBe('#/main')
+})
 it('저장이 막혀도 선택한 쉬운 화면을 이용할 수 있다', () => {
   render(<Welcome />)
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked') })
-  fireEvent.click(screen.getByRole('button', { name: /나에게 맞게 시작/ }))
-  fireEvent.click(screen.getByRole('button', { name: /이 설정으로 시작/ }))
+  fireEvent.click(screen.getByRole('button', { name: '쉬운 화면' }))
   expect(screen.getByRole('status').textContent).toContain('선택한 화면으로 이용')
   expect(screen.getByRole('button', { name: /엘리베이터 확인/ })).toBeTruthy()
 })
