@@ -13,11 +13,10 @@ import { nowHHMM, showBeTime, showTime } from '../../lib/time'
 import { setCustomFilters, useCustomFilters, useSignedIn } from './filterStore'
 import './elevator-filter.css'
 
-// 기본 필터: 전체역 · 고장(이용 불가) · 점검(일부 운행). 호선은 '+ 노선'으로 추가한다 (#103).
+// 기본 필터: 전체역 · 고장·점검(이용 불가 + 일부 운행, 상태 불명은 제외). 호선은 '+ 노선'으로 추가한다 (#103, #114).
 const ELEV_FILTERS = [
   { id: 'all', label: '전체역' },
-  { id: 'unavailable', label: '고장' },
-  { id: 'partial', label: '점검' },
+  { id: 'problem', label: '고장·점검' },
 ]
 const STATUS_RANK: Record<string, number> = { UNAVAILABLE: 0, PARTIAL: 1, AVAILABLE: 2, UNKNOWN: 3 }
 
@@ -51,6 +50,7 @@ export function ElevatorView() {
   const signedIn = useSignedIn()
   const customFilters = useCustomFilters()
   const [filter, setFilter] = useState('all')
+  const [selectedLines, setSelectedLines] = useState<string[]>([])
   const [fadeHidden, setFadeHidden] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -125,16 +125,22 @@ export function ElevatorView() {
     </>
   }
 
-  const activeCustom = signedIn ? customFilters : []
+  // 선택된 호선(본문 클릭으로 고른 것). 칩이 있어도 선택하지 않으면 호선으로 거르지 않는다 (#114)
+  const activeLines = signedIn ? selectedLines.filter((id) => customFilters.includes(id)) : []
   const items = all.filter((x) => {
     const sl = x.station.lines || []
-    if (activeCustom.length && !sl.some((id) => activeCustom.includes(id))) return false
+    if (activeLines.length && !sl.some((id) => activeLines.includes(id))) return false
     switch (filter) {
-      case 'unavailable': return x.status === 'UNAVAILABLE'
-      case 'partial': return x.status === 'PARTIAL'
+      // 고장·점검: 이용 불가 또는 일부 운행. 상태를 모르는 역(UNKNOWN)은 고장으로 분류하지 않는다
+      case 'problem': return x.status === 'UNAVAILABLE' || x.status === 'PARTIAL'
       default: return true
     }
   })
+  const toggleLine = (id: string) => setSelectedLines((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
+  const removeLine = (id: string) => {
+    setCustomFilters(customFilters.filter((x) => x !== id))
+    setSelectedLines((cur) => cur.filter((x) => x !== id))
+  }
   items.sort((a, b) => {
     const r = (STATUS_RANK[a.status] || 0) - (STATUS_RANK[b.status] || 0)
     return r !== 0 ? r : koCompare(a.station.name, b.station.name)
@@ -171,12 +177,17 @@ export function ElevatorView() {
               <span id="customFilterChips" className="custom-filter-slot" hidden={!signedIn}>
                 {signedIn && customFilters.map((lineId) => {
                   const l = getLine(lineId)
+                  const on = activeLines.includes(lineId)
+                  // 칩 본문은 선택 토글, × 는 칩 제거. 두 버튼은 형제라서 × 클릭이 선택을 바꾸지 않는다.
                   return (
-                    <span className="custom-filter-chip" key={lineId} data-custom-filter={lineId} style={{ '--line-color': l.color } as CSSProperties}>
-                      <span className="custom-filter-dot" aria-hidden="true"></span>
-                      {l.name}
+                    <span className={'custom-filter-chip' + (on ? ' selected' : '')} key={lineId} data-custom-filter={lineId} style={{ '--line-color': l.color } as CSSProperties}>
+                      <button type="button" className="custom-filter-body" data-select-line={lineId} aria-pressed={on}
+                        aria-label={l.name + (on ? ' 선택됨, 선택 해제' : ' 선택')} onClick={() => toggleLine(lineId)}>
+                        <span className="custom-filter-dot" aria-hidden="true"></span>
+                        {l.name}
+                      </button>
                       <button type="button" className="chip-x" data-remove-filter={lineId} aria-label={l.name + ' 필터 제거'}
-                        onClick={() => setCustomFilters(customFilters.filter((id) => id !== lineId))}>×</button>
+                        onClick={() => removeLine(lineId)}>×</button>
                     </span>
                   )
                 })}
