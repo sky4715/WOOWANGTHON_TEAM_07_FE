@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { StrictMode } from 'react'
 import App from '../../App'
 import { PREFERENCES_KEY } from '../welcome/preferences'
+import { addFavorite, renameFavorite } from './favorites'
 
 const $ = (sel: string) => document.querySelector(sel) as HTMLElement
 const click = (sel: string) => act(() => { fireEvent.click($(sel)) })
@@ -24,33 +25,23 @@ describe('계정 탭', () => {
     expect(($('[data-provider="google"]') as HTMLButtonElement).disabled).toBe(false)
     expect($('#authGuest').hidden).toBe(false)
   })
-  it('비로그인 → 로그인 → 즐겨찾기 추가/변경/삭제 → 로그아웃', async () => {
+  it('비로그인 → 로그인 → 마이페이지에는 즐겨찾기 섹션이 없고 저장 데이터는 유지 → 로그아웃 (#128)', async () => {
     mount()
     expect($('#authGuest').hidden).toBe(false)
     expect($('#authUser').hidden).toBe(true)
     click('[data-provider="google"]')
     expect($('#authUser').hidden).toBe(false)
     expect($('.tab[data-tab="login"]').textContent).toContain('마이페이지')
-    expect($('#favEmptyMsg').hidden).toBe(false)
-
-    click('#favAddBtn')
-    type('#favAddInput', '코엑스')
-    click('#favAddConfirm')
-    await act(async () => { await Promise.resolve() })
-    expect($('.fav-primary').textContent).toBe('코엑스')
-    expect(JSON.parse(sessionStorage.getItem('elevSubway.demoFavorites.v1')!)[0]).toMatchObject({ placeName: '코엑스', alias: '' })
-
-    click('#favEditBtn')
-    click('.fav-rename-btn')
-    type('.fav-item .fav-rename-input', '우리집')
-    act(() => { fireEvent.keyDown($('.fav-item .fav-rename-input'), { key: 'Enter' }) })
-    await act(async () => { await Promise.resolve() })
-    expect($('.fav-primary').textContent).toBe('우리집')
-    click('#favEditBtn')
-    click('.fav-detail-btn')
-    expect(document.querySelector('#sheetContent .sheet-title')?.textContent).toContain('우리집')
-    click('#subwayDemoPlay')
-    expect($('#subwayDemoAnim').classList.contains('running')).toBe(true)
+    // 마이페이지에서 즐겨찾기 섹션을 제거했다
+    expect(document.getElementById('favSection')).toBeNull()
+    expect(document.getElementById('favList')).toBeNull()
+    expect(document.getElementById('favAddBtn')).toBeNull()
+    // 즐겨찾기 데이터 저장소는 그대로 동작한다 (노선도·역 상세가 쓰는 데이터)
+    await act(async () => { await addFavorite('코엑스') })
+    const stored = JSON.parse(sessionStorage.getItem('elevSubway.demoFavorites.v1')!)
+    expect(stored[0]).toMatchObject({ placeName: '코엑스', alias: '' })
+    await act(async () => { await renameFavorite(stored[0].id, '우리집') })
+    expect(JSON.parse(sessionStorage.getItem('elevSubway.demoFavorites.v1')!)[0]).toMatchObject({ alias: '우리집' })
 
     click('#editNameBtn')
     type('#nameEditInput', '새 사용자')

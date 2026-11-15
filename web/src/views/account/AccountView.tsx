@@ -10,9 +10,8 @@ import './mypage-edit.css'
 import { SpeechSettings, useChatSpeech } from '../chat/voice/tts'
 import { DepartureSettingsCard } from './DepartureSettingsCard'
 import {
-  applyFontSize, loadFavs, readFontSize, useFavorites, realAuth,
-  addFavorite, renameFavorite, deleteFavorite, fetchFavorites, clearFavorites,
-  type Favorite, type FontLevel,
+  applyFontSize, readFontSize, realAuth, fetchFavorites, clearFavorites,
+  type FontLevel,
 } from './favorites'
 
 const FONT_CHIPS: { level: FontLevel; label: string }[] = [
@@ -21,58 +20,19 @@ const FONT_CHIPS: { level: FontLevel; label: string }[] = [
 ]
 const PROV_LABELS: Record<string, string> = { google: 'Google', kakao: '카카오' }
 
-function FavRenameRow({ fav, onDone, onToast }: { fav: Favorite; onDone: () => void; onToast: (m: string) => void }) {
-  const ref = useRef<HTMLInputElement>(null)
-  const savingRef = useRef(false)
-  useEffect(() => { ref.current?.focus(); ref.current?.select() }, [])
-  const commit = async () => {
-    const val = (ref.current?.value ?? '').trim()
-    if (!val) { onToast('이름을 입력해 주세요'); ref.current?.focus(); return }
-    if (savingRef.current) return
-    savingRef.current = true
-    try { await renameFavorite(fav.id, val); onDone() }
-    catch (error) { onToast(error instanceof Error ? error.message : '저장하지 못했어요.') }
-    finally { savingRef.current = false }
-  }
-  const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); commit() }
-    if (e.key === 'Escape') onDone()
-  }
-  return (
-    <>
-      <input ref={ref} type="text" className="fav-rename-input" defaultValue={fav.alias || fav.placeName} maxLength={20} onKeyDown={onKey} />
-      <button type="button" className="btn btn-sm btn-primary" onClick={commit}>저장</button>
-      <button type="button" className="btn btn-sm btn-ghost" onClick={onDone}>취소</button>
-    </>
-  )
-}
-
-function FavRenameRowWrap(props: { fav: Favorite; onDone: () => void; onToast: (m: string) => void }) {
-  return <div className="fav-inline-row fav-rename-wrap"><FavRenameRow {...props} /></div>
-}
-
 export function AccountView() {
-  const { currentTab, toast, setLoginTabLabel, openSheet, closeSheet, getSheet } = useApp()
+  const { currentTab, toast, setLoginTabLabel, closeSheet, getSheet } = useApp()
   const session = useSession()
   const checking = session === null
   const signedIn = !!(session && typeof session === 'object')
 
-  const favs = useFavorites()
   const speech = useChatSpeech()
-  const [favError, setFavError] = useState('')
-  const [favLoading, setFavLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
   const [loginPending, setLoginPending] = useState(false)
   const [loginError, setLoginError] = useState('')
   const savingRef = useRef(false)
-  const [favEditMode, setFavEditMode] = useState(false)
-  const [addOpen, setAddOpen] = useState(false)
-  const [addValue, setAddValue] = useState('')
-  const [renamingId, setRenamingId] = useState<string | null>(null)
   const [nameEditing, setNameEditing] = useState(false)
   const [nameValue, setNameValue] = useState('')
   const [fontSize, setFontSize] = useState<FontLevel>(() => readFontSize())
-  const addInputRef = useRef<HTMLInputElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -92,25 +52,15 @@ export function AccountView() {
 
   // renderLoginTab: 세션이 바뀔 때마다
   useEffect(() => {
-    let cancelled = false
     if (session === null) return
-    setFavError('')
     if (!session) {
       clearFavorites()
-      setFavLoading(false)
-      setAddOpen(false)
       setNameEditing(false)
       const s = getSheet()
       if (s.open && (s.mode === 'favDetail' || s.mode === 'filter')) closeSheet()
     } else if (realAuth()) {
-      setFavLoading(true)
-      fetchFavorites().catch((error) => {
-        if (!cancelled) setFavError(error instanceof Error ? error.message : '즐겨찾기를 불러오지 못했어요.')
-      }).finally(() => { if (!cancelled) setFavLoading(false) })
+      fetchFavorites().catch(() => { /* 즐겨찾기 목록은 마이페이지에 표시하지 않는다 */ })
     }
-    setFavEditMode(false)
-    setRenamingId(null)
-    return () => { cancelled = true }
   }, [session, getSheet, closeSheet])
 
   useLayoutEffect(() => { setLoginTabLabel(signedIn ? '마이페이지' : '로그인') }, [signedIn, setLoginTabLabel])
@@ -119,66 +69,12 @@ export function AccountView() {
   useEffect(() => {
     if (currentTab === 'login') return
     setNameEditing(false)
-    setAddOpen(false)
-    setAddValue('')
-    setFavEditMode(false)
-    setRenamingId(null)
   }, [currentTab])
 
   // 쉬운 화면으로 이동: 설정은 건드리지 않고 해시만 바꾼다. 뒤로 가기로 돌아올 때 로그인 탭이 열리도록 현재 항목에 탭을 남긴다.
   const goEasyScreen = () => {
     window.history.replaceState({ ...(window.history.state ?? {}), tab: 'login' }, '', window.location.href)
     window.location.hash = '#/easy'
-  }
-
-  const refreshFavs = () => {
-    if (!realAuth()) return
-    setFavError('')
-    setFavLoading(true)
-    fetchFavorites().catch((error) => setFavError(error instanceof Error ? error.message : '즐겨찾기를 불러오지 못했어요.'))
-      .finally(() => setFavLoading(false))
-  }
-
-  const openFavAdd = () => {
-    if (!Auth()?.getSession()) return
-    setAddValue('')
-    setAddOpen(true)
-    requestAnimationFrame(() => addInputRef.current?.focus())
-  }
-  const closeFavAdd = () => { setAddOpen(false); setAddValue('') }
-  const commitFavAdd = async () => {
-    if (!Auth()?.getSession()) return
-    const val = addValue.trim()
-    if (!val) { toast('장소 이름을 입력해 주세요'); addInputRef.current?.focus(); return }
-    if (savingRef.current || favLoading || favError) return
-    savingRef.current = true
-    setSaving(true)
-    try {
-      await addFavorite(val)
-      closeFavAdd()
-      toast('"' + val + '" 즐겨찾기에 추가했어요')
-    } catch (error) { toast(error instanceof Error ? error.message : '즐겨찾기를 저장하지 못했어요.') }
-    finally { savingRef.current = false; setSaving(false) }
-  }
-  const toggleFavEdit = () => {
-    setFavEditMode((m) => !m)
-    setRenamingId(null)
-    closeFavAdd()
-  }
-  const deleteFav = async (id: string) => {
-    if (savingRef.current) return
-    savingRef.current = true
-    setSaving(true)
-    const removed = loadFavs().find((f) => f.id === id)
-    try {
-      await deleteFavorite(id)
-      if (removed) toast('"' + (removed.alias || removed.placeName) + '" 즐겨찾기에서 삭제했어요')
-    } catch (error) { toast(error instanceof Error ? error.message : '즐겨찾기를 삭제하지 못했어요.') }
-    finally { savingRef.current = false; setSaving(false) }
-  }
-  const openFav = (id: string) => {
-    const target = loadFavs().find((f) => f.id === id)
-    if (target) openSheet('favDetail', { fav: target })
   }
 
   // 이름 편집
@@ -202,10 +98,9 @@ export function AccountView() {
     } else if (sess) {
       if (savingRef.current) return
       savingRef.current = true
-      setSaving(true)
       Auth()?.updateProfile?.(val).then(() => { cancelNameEdit(); toast('이름을 변경했어요') })
         .catch((error) => toast(error instanceof Error ? error.message : '이름을 저장하지 못했어요.'))
-        .finally(() => { savingRef.current = false; setSaving(false) })
+        .finally(() => { savingRef.current = false })
     }
   }
 
@@ -314,57 +209,6 @@ export function AccountView() {
                   </p>
                 </div>
               </div>
-            </div>
-
-            {/* 즐겨찾기 장소 */}
-            <div id="favSection" className="card mypage-section">
-              <div className="mypage-section-header">
-                <Icon name="star" className="mypage-section-icon" />
-                <span className="mypage-section-title">즐겨찾기 장소</span>
-                <div className="fav-header-actions">
-                  <button id="favAddBtn" className="btn btn-sm btn-ghost" type="button" disabled={saving || favLoading || !!favError} onClick={openFavAdd}><Icon name="add" />추가</button>
-                  <button id="favEditBtn" className="btn btn-sm btn-ghost" type="button" disabled={saving || favLoading || !!favError} onClick={toggleFavEdit}>{favEditMode ? '완료' : '수정'}</button>
-                </div>
-              </div>
-              {/* 추가 입력 행 (기본 숨김) */}
-              <div id="favAddRow" className="fav-add-row fav-inline-row" hidden={!addOpen}>
-                <input
-                  id="favAddInput" ref={addInputRef} type="text" className="fav-rename-input" placeholder="장소 이름 입력" autoComplete="off" maxLength={20}
-                  value={addValue} onChange={(e) => setAddValue(e.target.value)}
-                  onKeyDown={(e) => { enter(commitFavAdd)(e); if (e.key === 'Escape') closeFavAdd() }}
-                />
-                <button id="favAddConfirm" className="btn btn-sm btn-primary" type="button" disabled={saving} onClick={commitFavAdd}>저장</button>
-                <button id="favAddCancel" className="btn btn-sm btn-ghost" type="button" onClick={closeFavAdd}>취소</button>
-              </div>
-              <ul id="favList" className="fav-list">
-                {favs.map((fav) => {
-                  const renaming = renamingId === fav.id && favEditMode
-                  return (
-                    <li key={fav.id} className={'fav-item' + (favEditMode ? ' editing' : '')} data-fav-id={fav.id}>
-                      <div className="fav-info fav-name" style={renaming ? { display: 'none' } : undefined}>
-                        <span className="fav-primary">{fav.alias || fav.placeName}</span>
-                      </div>
-                      {favEditMode && (
-                        <div className="fav-edit-actions" style={renaming ? { display: 'none' } : undefined}>
-                          <button className="btn btn-sm fav-rename-btn" type="button" data-fav-rename={fav.id} onClick={() => setRenamingId(fav.id)}>변경</button>
-                          <button className="btn btn-sm fav-delete-btn" type="button" disabled={saving} data-fav-delete={fav.id} onClick={() => deleteFav(fav.id)}>삭제</button>
-                        </div>
-                      )}
-                      {!favEditMode && (
-                        <button className="fav-detail-btn" type="button" data-fav-open={fav.id} aria-label="장소 상세 보기" onClick={() => openFav(fav.id)}>
-                          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                        </button>
-                      )}
-                      {renaming && (
-                        <FavRenameRowWrap fav={fav} onToast={toast} onDone={() => { setRenamingId(null) }} />
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
-              {favLoading && <p role="status">즐겨찾기를 불러오고 있어요.</p>}
-              {favError && <p role="alert">{favError} <button type="button" className="btn btn-sm btn-ghost" onClick={refreshFavs}>다시 불러오기</button></p>}
-              <p id="favEmptyMsg" className="mypage-empty-hint" hidden={favs.length > 0 || favLoading || !!favError}>즐겨찾기한 장소가 없습니다.</p>
             </div>
 
             {/* 예상 이동 시간 (#87). 출발계산 화면에서 옮겨 왔다. */}

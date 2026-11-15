@@ -18,7 +18,7 @@ describe('AppShell 마크업', () => {
     expect(document.body.firstElementChild?.firstElementChild?.className).toBe('desktop-stage')
     for (const id of ['demoPanel', 'phone', 'statusTime', 'dataSourceBadge', 'searchInput', 'searchResults', 'view-map', 'lineFilter',
       'mapContainer', 'zoomIn', 'zoomOut', 'zoomReset', 'view-elevator', 'elevatorList', 'view-time', 'timeForm', 'originSelect',
-      'view-chat', 'chatForm', 'view-login', 'authGuest', 'favList', 'sheetBackdrop', 'bottomSheet', 'sheetHandle', 'sheetContent', 'toast']) {
+      'view-chat', 'chatForm', 'view-login', 'authGuest', 'sheetBackdrop', 'bottomSheet', 'sheetHandle', 'sheetContent', 'toast']) {
       expect($('#' + id), id).not.toBeNull()
     }
     expect(document.querySelectorAll('.tab-bar .tab[data-tab]').length).toBe(5)
