@@ -45,7 +45,7 @@ function stoppedWhere(stationId: string): string {
 }
 
 export function ElevatorView() {
-  const { currentTab, openStation, openSheet } = useApp()
+  const { currentTab, openStation, openSheet, toast } = useApp()
   const version = useElevatorVersion()
   const signedIn = useSignedIn()
   const customFilters = useCustomFilters()
@@ -111,8 +111,10 @@ export function ElevatorView() {
     summary = <div className="empty">{lsum.phase === 'loading' ? '엘리베이터 상태를 확인 중이에요' : '연결 실패 · 모든 역을 정보 없음으로 표시해요'}</div>
   } else if (live && counts.UNKNOWN > 0 && counts.AVAILABLE + counts.PARTIAL + counts.UNAVAILABLE === 0) {
     summary = <div className="summary-card unknown" role="status" style={{ gridColumn: '1 / -1' }}>
-      <div className="summary-icon"><Icon name="help" /></div>
-      <div className="summary-label">운행 상태 정보 없음</div>
+      <div className="summary-head">
+        <div className="summary-icon"><Icon name="help" /></div>
+        <div className="summary-label">운행 상태 정보 없음</div>
+      </div>
       <div className="summary-body"><span className="summary-num">{counts.UNKNOWN}</span><span className="summary-unit">역</span></div>
       <div className="card-sub">최신 운행 상태를 확인할 수 없어요. 역을 눌러 설비 목록과 수집 시각을 확인해 주세요.</div>
     </div>
@@ -120,8 +122,10 @@ export function ElevatorView() {
     summary = <>
       {cards.map((c) => (
         <div className={'summary-card ' + c.cls} key={c.key}>
-          <div className="summary-icon"><Icon name={statusIcon(c.key)} /></div>
-          <div className="summary-label">{statusLabel(c.key)}</div>
+          <div className="summary-head">
+            <div className="summary-icon"><Icon name={statusIcon(c.key)} /></div>
+            <div className="summary-label">{statusLabel(c.key)}</div>
+          </div>
           <div className="summary-body"><span className="summary-num">{counts[c.key]}</span><span className="summary-unit">역</span></div>
         </div>
       ))}
@@ -200,8 +204,9 @@ export function ElevatorView() {
                   )
                 })}
               </span>
-              <button type="button" className="chip-add-btn" id="addFilterBtn" hidden={!signedIn}
-                onClick={() => { if (signedIn) openSheet('filter', { stationId: null }, 'auto') }}>
+              {/* 항상 보이고, 로그아웃 상태에서는 시트 대신 안내 토스트만 띄운다 (#158). 로그인 정책은 그대로 */}
+              <button type="button" className="chip-add-btn" id="addFilterBtn"
+                onClick={() => { if (signedIn) openSheet('filter', { stationId: null }, 'auto'); else toast('로그인하면 호선을 추가할 수 있어요.') }}>
                 <Icon name="add" />노선
               </button>
             </div>
