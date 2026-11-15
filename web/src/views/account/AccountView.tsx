@@ -182,7 +182,7 @@ export function AccountView() {
                 <span className="mypage-easy-label">쉬운 화면</span>
                 {/* 남동쪽(↘) 화살표는 아이콘 글꼴 목록에 없어서 SVG로 직접 그린다 (#146) */}
                 <span className="mypage-easy-circle" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="18" height="18" focusable="false"><path d="M7 7l10 10M17 9v8H9" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <svg viewBox="0 0 24 24" width="18" height="18" focusable="false"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </span>
               </button>
             </div>
