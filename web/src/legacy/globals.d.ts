@@ -112,6 +112,8 @@ export interface ChatResponse {
   toolCalls?: Array<{ name: string; args?: Record<string, unknown> }>
   suggestions?: string[]
   actions?: ChatAction[]
+  /** 답변 근거 데이터의 수집 시각(ISO-8601, +09:00). 없으면 null. 답변 본문(text)과 따로 둔다. */
+  dataUpdatedAt?: string | null
 }
 
 export interface AIAgentApi {
