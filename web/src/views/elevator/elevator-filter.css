@@ -1,0 +1,13 @@
+/* 엘리베이터 필터 한 줄 구조 (#103). 줄바꿈 없이 필터 영역 안에서만 가로 스크롤한다.
+   '+ 노선'은 스크롤 안의 마지막 칩이라 노선이 추가될 때마다 오른쪽으로 밀린다. */
+#elevatorFilter.elevator-filter { display: block; position: sticky; }
+#elevatorFilter .elevator-filter-scroll { display: block; position: relative; overflow-x: auto; overflow-y: hidden; }
+#elevatorFilter .elevator-filter-inner { display: flex; align-items: center; flex-wrap: nowrap; gap: var(--sp-2); width: max-content; min-width: 100%; padding-right: var(--sp-2); }
+#elevatorFilter .filter-tabs-row { display: flex; flex: none; flex-wrap: nowrap; padding: 0; }
+#elevatorFilter .custom-filter-slot { display: flex; flex: none; align-items: center; gap: var(--sp-2); }
+#elevatorFilter .chip-add-btn { flex: none; grid-area: auto; margin: 0; }
+#elevatorFilter .filter-fade { position: absolute; top: 0; bottom: 0; right: 0; grid-area: auto; }
+#elevatorFilter .custom-filter-chip { max-width: 100%; }
+/* 노선 칩 색 점: 라인 색을 쓰되 글자 대비는 텍스트 색을 유지 */
+#elevatorFilter .custom-filter-dot { width: var(--sp-2); height: var(--sp-2); }
+@media (prefers-reduced-motion: reduce) { #elevatorFilter .elevator-filter-scroll { scroll-behavior: auto; } }

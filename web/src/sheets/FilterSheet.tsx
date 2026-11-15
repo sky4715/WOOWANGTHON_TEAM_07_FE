@@ -13,7 +13,8 @@ export function FilterSheet({ sheet }: SheetContentProps) {
   const toggle = (id: string) => setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
   const apply = () => {
     if (!hasSession()) { closeSheet(); return }
-    setCustomFilters(lineIds.filter((id) => selected.includes(id)))
+    // 추가한 순서를 그대로 쓴다 (새 노선은 뒤에 붙는다)
+    setCustomFilters(selected)
     closeSheet()
   }
 
