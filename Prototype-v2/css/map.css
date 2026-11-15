@@ -38,6 +38,8 @@
           mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent 100%);
 }
 .line-filter::-webkit-scrollbar { display: none; }
+/* 키보드로 가로 스크롤 영역에 들어왔을 때만 보이는 포커스 (칩 자체 포커스 스타일은 그대로) */
+.line-filter:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 12px; }
 .line-filter > * { flex: 0 0 auto; white-space: nowrap; }
 .line-filter:empty { display: none; }
 

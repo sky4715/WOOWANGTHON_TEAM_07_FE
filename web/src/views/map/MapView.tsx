@@ -1,5 +1,5 @@
 // 노선도 탭(#view-map): 호선 필터 칩, 지도(MetroMap), 확대/축소 버튼, 범례.
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useApp } from '../../app/context'
 import { Icon } from '../../components/Icon'
 import { mapCall } from '../../lib/stations'
@@ -15,6 +15,7 @@ function useLines(): LineInfo[] {
 function LineFilter() {
   const lines = useLines()
   const [activeLine, setActiveLine] = useState<string | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const pick = (lineId: string | null) => {
     const id = lineId && lineId === activeLine ? null : lineId // 같은 노선 다시 누르면 전체
@@ -22,8 +23,21 @@ function LineFilter() {
     mapCall('setLineFilter', id)
   }
 
+  // 선택이 바뀌면 그 칩이 가로 스크롤 영역 안에 보이도록만 옮긴다(페이지는 움직이지 않는다).
+  useEffect(() => {
+    const box = scrollRef.current
+    if (!box) return
+    const chip = Array.from(box.querySelectorAll<HTMLElement>('.chip')).find((el) => (el.dataset.line ?? '') === (activeLine ?? ''))
+    if (!chip) return
+    const pad = 16
+    const b = box.getBoundingClientRect()
+    const c = chip.getBoundingClientRect()
+    if (c.left < b.left + pad) box.scrollLeft -= b.left + pad - c.left
+    else if (c.right > b.right - pad) box.scrollLeft += c.right - (b.right - pad)
+  }, [activeLine])
+
   return (
-    <div id="lineFilter" className="line-filter">
+    <div id="lineFilter" ref={scrollRef} className="line-filter" tabIndex={0} role="group" aria-label="노선 선택">
       <button type="button" className={'chip' + (activeLine === null ? ' active' : '')} data-line="" onClick={() => pick(null)}>전체</button>
       {lines.map((l) => (
         <button
@@ -52,8 +66,9 @@ export function MapView() {
       </div>
       <div className="map-legend">
         <span><i className="lg-node ok"></i>정상</span>
-        <span><i className="lg-node warn"><Icon name="error" /></i>일부 운행</span>
-        <span><i className="lg-node bad"><Icon name="cancel" /></i>이용 불가</span>
+        {/* 기호만 쓴다: error/cancel 글꼴은 자체 원을 그려 바깥 원(이중 원)이 생긴다 */}
+        <span><i className="lg-node warn"><Icon name="priority_high" /></i>일부 운행</span>
+        <span><i className="lg-node bad"><Icon name="close" /></i>이용 불가</span>
         <span><i className="lg-node unknown"></i>정보 없음</span>
       </div>
     </section>
