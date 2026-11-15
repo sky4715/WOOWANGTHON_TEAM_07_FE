@@ -152,30 +152,44 @@ it('출발계산 요약에서 예전 기본값 문구와 로그인 안내 문구
   expect(text).not.toContain('마이페이지에 저장한 예상 이동 시간으로 계산해요.')
   expect(text).not.toContain('로그인하면 마이페이지에서')
   expect(document.querySelector('.departure-login-hint')).toBeNull()
-  expect(text).toContain('실제 이동 상황에 따라 소요시간이 달라질 수 있어요.')
+  expect(text).toContain('이동 시간과 준비 시간을 고려해 출발 시각을 계산해요.')
 })
 
-it('비로그인 사용자는 기본값 10/5/5/10을 여유시간 줄에 보여 준다', () => {
+it('출발계산 안내 문장은 한 번만 보이고 #departureSummary에 여유 시간 문구가 없다', () => {
   vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(false)
   render(<App />)
   open()
-  expect(document.querySelector('#departureSummary .departure-minutes-summary')?.textContent)
-    .toBe('여유시간: 역까지 10분 · 역 안 5분 · 하차 후 5분 · 추가 여유 10분')
+  const summary = document.getElementById('departureSummary')!
+  const sentence = '이동 시간과 준비 시간을 고려해 출발 시각을 계산해요.'
+  expect(summary.textContent?.split(sentence)).toHaveLength(2)
+  expect(summary.querySelectorAll('p')).toHaveLength(1)
+  expect(summary.textContent).not.toContain('여유')
 })
 
-it('로그인 사용자는 저장된 예상 시간을 여유시간 줄에 보여 준다', () => {
+it('비로그인 사용자는 기본값 10/5/5/10으로 출발 시각을 계산한다', async () => {
+  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(true)
+  const calculate = vi.spyOn(window.TimeCalculator, 'calculateDepartureLive').mockResolvedValue(result('09:20'))
+  render(<App />)
+  open()
+  await waitFor(() => expect(calculate).toHaveBeenCalledOnce())
+  expect(calculate.mock.lastCall?.[0]).toMatchObject({ walkToStationMinutes: 10, stationEntryMinutes: 5, exitWalkMinutes: 5, bufferMinutes: 10 })
+})
+
+it('로그인 사용자는 저장된 예상 시간으로 출발 시각을 계산한다', async () => {
   localStorage.setItem('elevSubway.departureMinutes.v1', JSON.stringify({ version: 1, walkToStationMinutes: 18, stationEntryMinutes: 9, exitWalkMinutes: 12, bufferMinutes: 15 }))
-  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(false)
+  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(true)
+  const calculate = vi.spyOn(window.TimeCalculator, 'calculateDepartureLive').mockResolvedValue(result('09:20'))
   render(<App />)
   loginMypage()
   goTab('time')
   open()
-  expect(document.querySelector('#departureSummary .departure-minutes-summary')?.textContent)
-    .toBe('여유시간: 역까지 18분 · 역 안 9분 · 하차 후 12분 · 추가 여유 15분')
+  await waitFor(() => expect(calculate).toHaveBeenCalledOnce())
+  expect(calculate.mock.lastCall?.[0]).toMatchObject({ walkToStationMinutes: 18, stationEntryMinutes: 9, exitWalkMinutes: 12, bufferMinutes: 15 })
 })
 
-it('마이페이지에서 예상 시간을 저장하면 출발계산 여유시간 줄이 바뀐다', () => {
-  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(false)
+it('마이페이지에서 예상 시간을 저장하면 출발 시각 계산에 그 값이 쓰인다', async () => {
+  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(true)
+  const calculate = vi.spyOn(window.TimeCalculator, 'calculateDepartureLive').mockResolvedValue(result('09:20'))
   render(<App />)
   loginMypage()
   editMinute('walkToStationMinutes', '21')
@@ -183,8 +197,8 @@ it('마이페이지에서 예상 시간을 저장하면 출발계산 여유시�
   saveMinutes()
   goTab('time')
   open()
-  expect(document.querySelector('#departureSummary .departure-minutes-summary')?.textContent)
-    .toBe('여유시간: 역까지 21분 · 역 안 5분 · 하차 후 5분 · 추가 여유 7분')
+  await waitFor(() => expect(calculate).toHaveBeenCalledOnce())
+  expect(calculate.mock.lastCall?.[0]).toMatchObject({ walkToStationMinutes: 21, stationEntryMinutes: 5, exitWalkMinutes: 5, bufferMinutes: 7 })
 })
 
 it.each(['standard', 'resting'])('마이페이지에서 간단 선택 %s를 저장하면 네 구간이 채워져 계산과 openTime에 전달된다', async (presetId) => {

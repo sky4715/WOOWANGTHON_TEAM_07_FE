@@ -12,6 +12,7 @@ import { TimeResultView } from './TimeResult'
 import { buildResultModel, liveErrorMessage, type ResultModel } from './timeResultModel'
 import { minuteError, minuteFields, type MinuteValues } from './departureMinuteValues'
 import { usePersonalMinutes } from './personalMinutes'
+import './departure-hint.css'
 
 type Result =
   | { kind: 'empty'; text: string }
@@ -202,9 +203,8 @@ export function TimeView() {
               <input id="arriveBy" type="hidden" value={arriveByValue} readOnly />
             </div>
           </div>
-          <div id="departureSummary" className="departure-summary">
-            <p className="departure-minutes-note">실제 이동 상황에 따라 소요시간이 달라질 수 있어요.</p>
-            <p className="departure-minutes-summary">{`여유시간: 역까지 ${minutes.walkToStationMinutes}분 · 역 안 ${minutes.stationEntryMinutes}분 · 하차 후 ${minutes.exitWalkMinutes}분 · 추가 여유 ${minutes.bufferMinutes}분`}</p>
+          <div id="departureSummary" className="departure-summary departure-hint">
+            <p className="departure-hint-text">이동 시간과 준비 시간을 고려해 출발 시각을 계산해요.</p>
           </div>
           <button className="btn btn-primary btn-block btn-main" type="submit" disabled={busy}>출발 시각 계산하기</button>
         </form>

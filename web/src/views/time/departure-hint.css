@@ -1,0 +1,14 @@
+/* 출발 시각 계산 탭의 안내 문장. mypage-edit.css(.departure-summary: flex column, gap, margin-bottom)를 이 화면 안에서만 덮어쓴다. */
+.departure-summary.departure-hint {
+  display: block;
+  gap: 0;
+  margin: 0 0 var(--sp-2);
+}
+.departure-summary.departure-hint .departure-hint-text {
+  margin: 0;
+  font-size: var(--fs-label);
+  color: var(--text-2);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+}
