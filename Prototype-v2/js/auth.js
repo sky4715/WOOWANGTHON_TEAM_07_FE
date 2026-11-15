@@ -139,7 +139,15 @@
         kakao:  '/api/auth/kakao/login'
       };
       if (!paths.hasOwnProperty(provider)) return;
-      window.location.href = apiBase() + paths[provider];
+      return RealAdapter.request('/api/auth/providers').then(function (data) {
+        if (!data.providers || !data.providers[provider] || !data.providers[provider].configured) {
+          throw new Error('아직 준비되지 않은 로그인 방법이에요. 다른 방법을 선택해 주세요.');
+        }
+        if (!data.storage_ready) {
+          throw new Error('로그인 저장소가 아직 준비되지 않았어요. 관리자에게 확인해 주세요.');
+        }
+        window.location.href = apiBase() + paths[provider];
+      });
     },
 
     logout: function () {

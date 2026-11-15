@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { StrictMode } from 'react'
 import App from '../../App'
@@ -8,11 +8,21 @@ const click = (sel: string) => act(() => { fireEvent.click($(sel)) })
 const type = (sel: string, value: string) => act(() => { fireEvent.change($(sel), { target: { value } }) })
 
 beforeEach(() => { sessionStorage.clear(); localStorage.clear(); window.AuthService?.logout() })
-afterEach(() => { cleanup(); document.documentElement.removeAttribute('data-fontsize') })
+afterEach(() => { cleanup(); vi.restoreAllMocks(); document.documentElement.removeAttribute('data-fontsize') })
 
 function mount() { return render(<StrictMode><App /></StrictMode>) }
 
 describe('계정 탭', () => {
+  it('실제 로그인 연결 실패는 화면에 안내하고 버튼을 다시 사용할 수 있다', async () => {
+    vi.spyOn(window.AuthService, 'login').mockRejectedValue(new Error('로그인 저장소가 아직 준비되지 않았어요.'))
+    mount()
+    click('[data-provider="google"]')
+    expect(($('[data-provider="google"]') as HTMLButtonElement).disabled).toBe(true)
+    await act(async () => { await Promise.resolve() })
+    expect(document.querySelector('#authGuest [role="alert"]')?.textContent).toContain('로그인 저장소가 아직 준비되지 않았어요.')
+    expect(($('[data-provider="google"]') as HTMLButtonElement).disabled).toBe(false)
+    expect($('#authGuest').hidden).toBe(false)
+  })
   it('비로그인 → 로그인 → 즐겨찾기 추가/변경/삭제 → 로그아웃', async () => {
     mount()
     expect($('#authGuest').hidden).toBe(false)
