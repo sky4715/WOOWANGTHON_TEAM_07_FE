@@ -29,7 +29,9 @@ describe('챗 탭', () => {
     await waitFor(() => expect($('#chatMessages')?.textContent).toContain('강남역 정보를 확인했어요.'))
     expect($('#chatMessages .tool-chip')).toBeNull()
     expect($('#chatMessages')?.textContent).not.toMatch(/resolve_station|get_elevator_status/)
-    fireEvent.click($('#chatMessages .msg-actions button')!)
+    // 역 ID가 있는 openStation은 역 카드가 되고, 카드의 '역 정보 보기'가 같은 역 상세를 연다 (#116).
+    expect($('#chatMessages .station-card')?.textContent).toContain('강남역')
+    fireEvent.click($('#chatMessages .station-card-open')!)
     expect($('#sheetContent .sheet-title')?.textContent).toContain('강남역')
   })
 
