@@ -1,0 +1,46 @@
+.ieum-logo {
+  --ieum-blue: #3387f7;
+  --ieum-blue-deep: #1759bb;
+  --ieum-navy: #172c54;
+  --ieum-slogan: #64748b;
+  --ieum-glow: #bbd9ff;
+  --ieum-dot-fill: #ffffff;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.ieum-logo-dot { fill: var(--ieum-dot-fill); }
+.ieum-logo-sparkle path { opacity: 0.45; }
+
+/* Highlight dash travels along each curve; dash is 18% of the path, offset sweeps it across. */
+.ieum-logo-flow {
+  stroke: var(--ieum-glow);
+  stroke-opacity: 0.85;
+  stroke-width: 9;
+  stroke-dasharray: 18 82;
+  stroke-dashoffset: 18;
+  opacity: 0;
+  animation: ieum-logo-flow 4.5s linear infinite;
+  will-change: stroke-dashoffset;
+}
+.ieum-logo-flow-b { animation-name: ieum-logo-flow-b; }
+
+/* Curve A runs 0%-45% of the loop, curve B 45%-90%, then rest. Offset 18 -> -100 moves dash from before start to past end. */
+@keyframes ieum-logo-flow {
+  0%   { stroke-dashoffset: 18; opacity: 0; }
+  4%   { opacity: 1; }
+  41%  { opacity: 1; }
+  45%  { stroke-dashoffset: -100; opacity: 0; }
+  100% { stroke-dashoffset: -100; opacity: 0; }
+}
+@keyframes ieum-logo-flow-b {
+  0%, 45% { stroke-dashoffset: 18; opacity: 0; }
+  49%  { opacity: 1; }
+  86%  { opacity: 1; }
+  90%  { stroke-dashoffset: -100; opacity: 0; }
+  100% { stroke-dashoffset: -100; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ieum-logo-flow { animation: none; display: none; }
+}
