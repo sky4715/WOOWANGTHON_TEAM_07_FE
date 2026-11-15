@@ -177,9 +177,10 @@ export function AccountView() {
           <div id="authUser" className="auth-state" hidden={checking || !signedIn}>
             <div className="mypage-header">
               <h2 className="view-title">마이페이지</h2>
+              {/* 글자와 원형 화살표를 함께 묶은 한 개의 버튼 (#142). 왼쪽에 글자, 오른쪽 끝에 동그라미 화살표. */}
               <button id="mypageEasyBtn" className="mypage-easy-btn" type="button" onClick={goEasyScreen}>
-                <Icon name="accessibility_new" />
-                <span>쉬운 화면으로 이동</span>
+                <span className="mypage-easy-label">쉬운 화면</span>
+                <span className="mypage-easy-circle" aria-hidden="true"><Icon name="south_east" /></span>
               </button>
             </div>
 

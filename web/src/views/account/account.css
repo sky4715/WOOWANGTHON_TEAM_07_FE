@@ -101,7 +101,7 @@
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  padding: 6px 16px 6px 6px;
+  padding: 6px 6px 6px 16px;
   border: 1px solid var(--ieum-blue, #3387f7);
   border-radius: 999px;
   background: #fff;
@@ -113,7 +113,8 @@
   cursor: pointer;
   max-width: 100%;
 }
-.mypage-easy-btn .ms {
+.mypage-easy-label { white-space: nowrap; }
+.mypage-easy-circle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -130,5 +131,5 @@
 .mypage-easy-btn:hover { background: #eef5ff; }
 .mypage-easy-btn:focus-visible { outline: 3px solid var(--ieum-blue-deep, #1759bb); outline-offset: 2px; }
 @media (max-width: 360px) {
-  .mypage-easy-btn { font-size: 14px; padding-right: 12px; }
+  .mypage-easy-btn { font-size: 14px; padding-left: 12px; }
 }
