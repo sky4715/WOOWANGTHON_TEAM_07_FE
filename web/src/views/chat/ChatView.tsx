@@ -13,6 +13,8 @@ import { VoiceInput } from './voice/recognition/VoiceInput'
 import { SpeechControls, useChatSpeech } from './voice/tts'
 import { responseSpeechText } from './responseSpeechText'
 import { AnswerText } from './AnswerText'
+import { StationAnswerCards } from './StationAnswerCards'
+import { buildStationCards } from './stationCards'
 import './chat-accessibility.css'
 
 type Msg =
@@ -164,10 +166,12 @@ export function ChatView() {
           if (m.kind === 'user') return <div key={m.key} className="msg user"><div className="bubble">{m.voice ? <span className="chat-voice-origin">말로 보낸 질문</span> : null}<Text text={m.text} /></div></div>
           if (m.kind === 'typing') return <div key={m.key} className="msg bot"><div className="typing"><span></span><span></span><span></span></div></div>
           const r = m.resp || ({} as ChatResponse)
-          const actions = (r.actions || []).filter((a) => a.type !== 'showAlternative')
+          // 역 정보 답변(openStation 액션 + 역 데이터가 있을 때)만 카드로 바꾼다. 나머지 액션은 기존 버튼.
+          const { cards, rest: actions } = buildStationCards((r.actions || []).filter((a) => a.type !== 'showAlternative'))
           return (
             <div key={m.key} className="msg bot">
               {r.text ? <div className="bubble bubble-answer"><AnswerText text={r.text} /></div> : null}
+              <StationAnswerCards cards={cards} onOpenStation={openStation} />
               {/* mock 모드 AIAgent가 만든 신뢰된 카드 HTML. 서버 문자열은 절대 여기에 넣지 않는다. */}
               {r.html && !apiMode() ? <ExpiringHtml html={r.html} /> : null}
               {!listening && <SpeechControls messageKey={m.key} text={responseSpeechText(r)} speech={speech} />}
