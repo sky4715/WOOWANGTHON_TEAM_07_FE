@@ -33,6 +33,24 @@ describe('노선도 범례', () => {
     expect(icon('bad')?.textContent).toBe('close')
   })
 
+  it('범례는 상태 4개를 같은 크기의 원으로 보여 준다', () => {
+    render(<App />)
+    const items = [...document.querySelectorAll('.map-legend > span')]
+    expect(items.map((s) => s.lastChild?.textContent)).toEqual(['정상', '일부 운행', '이용 불가', '정보 없음'])
+    const nodes = ['ok', 'warn', 'bad', 'unknown'].map((cls) => {
+      const node = document.querySelector(`.map-legend .lg-node.${cls}`) as HTMLElement
+      expect(node).not.toBeNull()
+      return getComputedStyle(node)
+    })
+    for (const style of nodes) {
+      expect(style.width).toBe('16px')
+      expect(style.height).toBe('16px')
+      expect(style.borderRadius).toBe('50%')
+    }
+    const icon = getComputedStyle(document.querySelector('.map-legend .lg-node.warn .ms') as HTMLElement)
+    expect(icon.fontSize).toBe('12px')
+  })
+
   it('범례 원은 테두리 없이 상태 색 채움만 남는다', () => {
     render(<App />)
     for (const cls of ['warn', 'bad']) {
