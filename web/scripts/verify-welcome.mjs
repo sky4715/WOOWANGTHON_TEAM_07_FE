@@ -33,12 +33,19 @@ try {
   assert((await page.$eval('h1 svg', (element) => element.getAttribute('aria-label'))).includes('이음'), '랜딩 로고에 이음 표시')
   const geo = await page.evaluate(() => {
     const rect = (selector) => document.querySelector(selector).getBoundingClientRect()
-    const a = rect('.ieum-mode-basic'), b = rect('.ieum-mode-easy'), logo = rect('.ieum-landing-logo .ieum-logo'), w = window.innerWidth
-    return { sameW: Math.abs(a.width - b.width) < 1, sameH: Math.abs(a.height - b.height) < 1, groupCenter: Math.abs((a.left + b.right) / 2 - w / 2) < 2,
-      logoCenter: Math.abs((logo.left + logo.right) / 2 - w / 2) < 2, gap: Math.round(b.left - a.right), bottomGap: Math.round(window.innerHeight - b.bottom), logoAbove: logo.bottom < a.top }
+    const shell = document.querySelector('.welcome-shell'), group = document.querySelector('.ieum-landing-group')
+    const a = rect('.ieum-mode-basic'), b = rect('.ieum-mode-easy'), logo = rect('.ieum-landing-logo .ieum-logo'), g = rect('.ieum-landing-group'), w = window.innerWidth
+    const style = getComputedStyle(shell), top = g.top - (shell.getBoundingClientRect().top + parseFloat(style.paddingTop))
+    const bottom = shell.getBoundingClientRect().bottom - parseFloat(style.paddingBottom) - g.bottom
+    return { sameW: Math.abs(a.width - b.width) < 1, sameH: Math.abs(a.height - b.height) < 1, row: Math.abs(a.top - b.top) < 1,
+      groupCenter: Math.abs((a.left + b.right) / 2 - w / 2) < 2, logoCenter: Math.abs((logo.left + logo.right) / 2 - w / 2) < 2,
+      logoAbove: logo.bottom < a.top, height: Math.round(a.height), width: Math.round(a.width), gap: Math.round(b.left - a.right),
+      logoGap: Math.round(a.top - logo.bottom), centered: Math.abs(top - bottom) < 4, groupInside: g.left >= 0 && g.right <= w, hasGroup: !!group }
   })
-  assert.deepEqual([geo.sameW, geo.sameH, geo.groupCenter, geo.logoCenter, geo.logoAbove], [true, true, true, true, true], JSON.stringify(geo))
-  assert(geo.gap >= 12 && geo.gap <= 16 && geo.bottomGap >= 16, '버튼 간격과 하단 여백: ' + JSON.stringify(geo))
+  assert.deepEqual([geo.sameW, geo.sameH, geo.row, geo.groupCenter, geo.logoCenter, geo.logoAbove, geo.centered, geo.groupInside, geo.hasGroup], [true, true, true, true, true, true, true, true, true], JSON.stringify(geo))
+  assert(geo.height >= 44 && geo.height <= 48, '버튼 높이 44~48px: ' + JSON.stringify(geo))
+  assert(geo.logoGap >= 24 && geo.logoGap <= 32, '로고와 버튼 사이 24~32px: ' + JSON.stringify(geo))
+  assert(geo.gap >= 12 && geo.gap <= 16, '버튼 가로 간격 12~16px: ' + JSON.stringify(geo))
   await page.click('.ieum-mode-easy')
   await page.waitForSelector('[data-page="easy-main"]')
   assert.equal(new URL(page.url()).hash, '#/easy')

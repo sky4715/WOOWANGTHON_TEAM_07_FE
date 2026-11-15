@@ -92,10 +92,12 @@ export default function Welcome() {
     </div>
     {landing && <div className="welcome-shell ieum-landing" data-page="landing">
       <main className="ieum-landing-main">
-        <h1 className="ieum-landing-logo" ref={heading} tabIndex={-1}><IeumLogo /></h1>
-        <div className="ieum-mode-choices" role="group" aria-label="이용할 화면 선택">
-          <button className="ieum-mode-btn ieum-mode-basic" type="button" onClick={() => choose(false)}>기본 화면</button>
-          <button className="ieum-mode-btn ieum-mode-easy" type="button" onClick={chooseEasy}>쉬운 화면</button>
+        <div className="ieum-landing-group">
+          <h1 className="ieum-landing-logo" ref={heading} tabIndex={-1}><IeumLogo /></h1>
+          <div className="ieum-mode-choices" role="group" aria-label="이용할 화면 선택">
+            <button className="ieum-mode-btn ieum-mode-basic" type="button" onClick={() => choose(false)}>기본 화면</button>
+            <button className="ieum-mode-btn ieum-mode-easy" type="button" onClick={chooseEasy}>쉬운 화면</button>
+          </div>
         </div>
       </main>
     </div>}
