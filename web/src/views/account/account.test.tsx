@@ -56,6 +56,25 @@ describe('계정 탭', () => {
     expect($('.tab[data-tab="login"]').textContent).toContain('로그인')
   })
 
+  it('쉬운 화면 전환 버튼은 마이페이지 헤더 왼쪽에만 있고 다른 탭에는 없다 (#134)', () => {
+    mount()
+    click('[data-provider="google"]')
+    const btn = document.getElementById('mypageEasyBtn')
+    expect(btn).not.toBeNull()
+    expect(btn?.textContent).toContain('쉬운 화면으로 이동')
+    // 제목보다 앞(왼쪽)에 있다
+    const title = document.querySelector('#view-login .mypage-header h2') as HTMLElement
+    expect(btn!.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // 마이페이지 밖의 탭 어디에도 이 버튼이나 같은 문구의 버튼이 없다
+    act(() => { window.App!.switchTab('map') })
+    for (const tab of ['map', 'elevator', 'time', 'chat']) {
+      act(() => { window.App!.switchTab(tab) })
+      const outside = [...document.querySelectorAll('.view button')].filter((b) => !b.closest('#view-login'))
+      expect(outside.some((b) => /쉬운 화면/.test(b.textContent || '')), tab).toBe(false)
+      expect(document.getElementById('mypageEasyBtn')?.closest(`#view-${tab}`) ?? null, tab).toBeNull()
+    }
+  })
+
   it('글자 크기 칩이 html[data-fontsize]와 저장소를 바꾼다', () => {
     mount()
     click('.fontsize-chip[data-fontsize="xl"]')
