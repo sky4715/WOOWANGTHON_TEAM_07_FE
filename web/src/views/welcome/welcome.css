@@ -33,7 +33,9 @@
 .customize-fonts label, .customize-options label { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--welcome-touch); padding: var(--sp-4); border: 2px solid var(--border-strong); border-radius: var(--radius-sm); cursor: pointer; }
 .customize-fonts label:has(:checked), .customize-options label:has(:checked) { border-color: var(--primary-text); background: var(--primary-tint); }
 .customize-main input { flex: none; width: var(--icon-lg); height: var(--icon-lg); margin: 0; accent-color: var(--primary-text); }
-.customize-sample { padding: var(--sp-5); margin-top: var(--sp-4); background: var(--surface-2); border-radius: var(--radius-sm); }
+/* 제목과 안내 문구 사이는 8px로 맞춘다. 카드 안쪽 위 여백(--sp-5)만큼 안내 문구를 끌어올린다 (fieldset은 제목 아래 여백을 따로 두기 때문) */
+.customize-main legend.customize-legend-help { margin-bottom: var(--sp-2); }
+.customize-help-text { margin: calc(var(--sp-5) * -1) 0 var(--sp-3); color: var(--text-2); font-size: var(--fs-label); line-height: var(--lh-body); }
 .customize-options { display: grid; gap: var(--sp-3); }
 .customize-options strong, .customize-options strong + span { display: block; }
 .customize-options strong + span { margin-top: var(--sp-1); font-size: var(--fs-label); color: var(--text-2); }
@@ -42,6 +44,8 @@
 .easy-navigation a { display: inline-flex; align-items: center; min-height: var(--tap-main); padding: var(--sp-2); color: var(--primary-text); text-underline-offset: var(--sp-1); }
 .easy-main-content { max-width: var(--welcome-choice-width); margin: 0 auto; text-align: center; }
 .easy-main-content h1 { font-size: var(--fs-display); line-height: var(--lh-title); margin-bottom: var(--sp-4); }
+.easy-title-row { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.easy-title-row h1 { min-width: 0; margin: 0; }
 .welcome-tasks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); margin-block: var(--sp-8); }
 .welcome-tasks button { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-6); min-height: var(--tap-main); border: 2px solid var(--border-strong); border-radius: var(--radius); text-align: left; background: var(--surface); }
 .welcome-tasks button > span:nth-child(2) { flex: 1; }
@@ -53,6 +57,9 @@
 .easy-secondary-actions button { min-height: 48px; padding: var(--sp-2) var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--primary-text); background: var(--surface); font-size: var(--fs-label); font-weight: var(--fw-strong); cursor: pointer; }
 .easy-secondary-actions button:hover { background: var(--primary-tint); }
 .easy-secondary-actions button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.easy-secondary-actions .easy-customize-action { border-color: var(--primary); color: var(--on-primary); background: var(--primary); }
+.easy-secondary-actions .easy-customize-action:hover { border-color: var(--primary-press); color: var(--on-primary); background: var(--primary-press); }
+.easy-secondary-actions .easy-customize-action:active { transform: scale(.98); }
 .easy-main-note { color: var(--text-2); font-size: var(--fs-label); text-align: left; }
 .easy-navigation { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--sp-2); flex: none; padding: var(--sp-2) var(--sp-4); background: var(--surface); border-bottom: 1px solid var(--border-strong); font-size: var(--fs-label); }
 .access-notice { position: fixed; bottom: var(--tabbar-total); inset-inline: var(--sp-4); z-index: 51; padding: var(--sp-4); background: var(--surface); border: 2px solid var(--focus); }

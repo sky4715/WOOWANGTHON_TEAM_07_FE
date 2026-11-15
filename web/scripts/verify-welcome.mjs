@@ -69,7 +69,7 @@ try {
   assert.equal(await page.$('.welcome-return'), null)
   await page.click('.easy-navigation a')
   await page.waitForSelector('[data-page="easy-main"]')
-  await page.click('.easy-secondary-actions button:last-child')
+  await page.click('.easy-title-row .customize-back')
   await page.waitForSelector('.ieum-mode-basic')
   await page.click('.ieum-mode-basic')
   await page.waitForSelector('#view-map.active')
