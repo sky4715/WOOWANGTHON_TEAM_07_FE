@@ -134,15 +134,57 @@ it('저장값을 지우면 자동 예상 시간(기본값)으로 계산한다', 
   expect(calculate.mock.lastCall?.[0]).toMatchObject({ walkToStationMinutes: 10, stationEntryMinutes: 5, exitWalkMinutes: 5, bufferMinutes: 10 })
 })
 
-it('출발계산 화면은 개인 설정 UI 없이 현재 예상 시간과 로그인 안내 문구만 보여 준다', () => {
+it('출발계산 화면은 개인 설정 UI 없이 현재 적용 중인 여유시간만 보여 준다', () => {
   vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(false)
   render(<App />)
   open()
   expect(document.getElementById('departureMinutes')).toBeNull()
   expect(document.querySelector('[data-departure-preset]')).toBeNull()
-  expect(document.getElementById('departureSummary')?.textContent).toContain('역까지 10분')
   expect(document.querySelector('#departureSummary button')).toBeNull()
-  expect(document.getElementById('departureSummary')?.textContent).toContain('로그인하면 마이페이지에서 예상 이동시간을 설정할 수 있어요.')
+})
+
+it('출발계산 요약에서 예전 기본값 문구와 로그인 안내 문구를 보여 주지 않는다', () => {
+  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(false)
+  render(<App />)
+  open()
+  const text = document.getElementById('departureSummary')?.textContent ?? ''
+  expect(text).not.toContain('기본 예상 이동 시간으로 계산해요.')
+  expect(text).not.toContain('마이페이지에 저장한 예상 이동 시간으로 계산해요.')
+  expect(text).not.toContain('로그인하면 마이페이지에서')
+  expect(document.querySelector('.departure-login-hint')).toBeNull()
+  expect(text).toContain('실제 이동 상황에 따라 소요시간이 달라질 수 있어요.')
+})
+
+it('비로그인 사용자는 기본값 10/5/5/10을 여유시간 줄에 보여 준다', () => {
+  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(false)
+  render(<App />)
+  open()
+  expect(document.querySelector('#departureSummary .departure-minutes-summary')?.textContent)
+    .toBe('여유시간: 역까지 10분 · 역 안 5분 · 하차 후 5분 · 추가 여유 10분')
+})
+
+it('로그인 사용자는 저장된 예상 시간을 여유시간 줄에 보여 준다', () => {
+  localStorage.setItem('elevSubway.departureMinutes.v1', JSON.stringify({ version: 1, walkToStationMinutes: 18, stationEntryMinutes: 9, exitWalkMinutes: 12, bufferMinutes: 15 }))
+  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(false)
+  render(<App />)
+  loginMypage()
+  goTab('time')
+  open()
+  expect(document.querySelector('#departureSummary .departure-minutes-summary')?.textContent)
+    .toBe('여유시간: 역까지 18분 · 역 안 9분 · 하차 후 12분 · 추가 여유 15분')
+})
+
+it('마이페이지에서 예상 시간을 저장하면 출발계산 여유시간 줄이 바뀐다', () => {
+  vi.spyOn(window.ApiClient, 'isApiMode').mockReturnValue(false)
+  render(<App />)
+  loginMypage()
+  editMinute('walkToStationMinutes', '21')
+  editMinute('bufferMinutes', '7')
+  saveMinutes()
+  goTab('time')
+  open()
+  expect(document.querySelector('#departureSummary .departure-minutes-summary')?.textContent)
+    .toBe('여유시간: 역까지 21분 · 역 안 5분 · 하차 후 5분 · 추가 여유 7분')
 })
 
 it.each(['standard', 'resting'])('마이페이지에서 간단 선택 %s를 저장하면 네 구간이 채워져 계산과 openTime에 전달된다', async (presetId) => {
