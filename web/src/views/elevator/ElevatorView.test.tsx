@@ -70,7 +70,28 @@ describe('엘리베이터 탭', () => {
     expect($('#elevUpdated')?.textContent).toMatch(/기준$/)
     expect($$('#elevatorFilter .filter-tab').map((t) => t.getAttribute('data-filter'))).toEqual(['all', 'problem'])
     expect($$('#elevatorList .station-row[data-id]').length).toBeGreaterThan(0)
-    expect($('#addFilterBtn')?.hidden).toBe(true)
+    // '+ 노선'은 로그아웃 상태에서도 보이고, 필터 행의 마지막 요소다 (#158)
+    expect($('#addFilterBtn')?.hidden).toBe(false)
+    expect($('#elevatorFilterScroll .elevator-filter-inner')?.lastElementChild?.id).toBe('addFilterBtn')
+  })
+
+  it('요약 카드의 아이콘과 이름은 같은 줄(head)에 있고 숫자 + 역이 그 아래에 온다 (#156)', () => {
+    render(<App />)
+    const cards = $$('#elevatorSummary .summary-card')
+    expect(cards).toHaveLength(3)
+    cards.forEach((card) => {
+      const head = card.querySelector('.summary-head')
+      expect(head?.querySelector('.summary-icon')).not.toBeNull()
+      expect(head?.querySelector('.summary-label')?.textContent).toBeTruthy()
+      expect(card.querySelector('.summary-body .summary-num')).not.toBeNull()
+    })
+  })
+
+  it('로그아웃 상태에서 + 노선을 누르면 안내 토스트만 뜨고 필터 시트는 열리지 않는다 (#158)', () => {
+    render(<App />)
+    fireEvent.click($('#addFilterBtn')!)
+    expect($('#toast')?.textContent).toBe('로그인하면 호선을 추가할 수 있어요.')
+    expect($('#filterPicker')).toBeNull()
   })
 
   it('정렬: 이용 불가 → 일부 → 정상 순', () => {
@@ -208,7 +229,10 @@ describe('엘리베이터 탭', () => {
     const rows = $$('#elevatorList .station-row')
     expect(rows.every((r) => window.ElevatorService.getStation(r.dataset.id!)?.lines.includes('2'))).toBe(true)
     await act(async () => { await window.AuthService.logout() })
-    expect($('#addFilterBtn')?.hidden).toBe(true)
+    expect($('#addFilterBtn')?.hidden).toBe(false)
+    expect($$('[data-custom-filter]').length).toBe(0)
+    fireEvent.click($('#addFilterBtn')!)
+    expect($('#toast')?.textContent).toBe('로그인하면 호선을 추가할 수 있어요.')
     expect(sessionStorage.getItem('elevSubway.elevFilters.v1')).toBe('[]')
   })
 })

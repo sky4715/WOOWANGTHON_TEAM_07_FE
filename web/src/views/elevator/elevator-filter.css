@@ -12,6 +12,14 @@
 #elevatorFilter .custom-filter-dot { width: var(--sp-2); height: var(--sp-2); }
 @media (prefers-reduced-motion: reduce) { #elevatorFilter .elevator-filter-scroll { scroll-behavior: auto; } }
 
+/* 요약 카드 (#156): 아이콘과 이름은 한 줄에 세로 가운데 정렬, 그 아래 숫자 + 역은 한 줄 유지.
+   색·아이콘·배경·모서리는 style.css 값을 그대로 쓴다. */
+#elevatorSummary .summary-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); min-width: 0; }
+#elevatorSummary .summary-head { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: var(--sp-2); max-width: 100%; min-width: 0; }
+#elevatorSummary .summary-icon { display: inline-flex; align-items: center; flex: none; }
+#elevatorSummary .summary-label { display: block; min-width: 0; margin: 0; line-height: var(--lh-title); overflow-wrap: anywhere; text-align: left; }
+#elevatorSummary .summary-body { display: flex; flex-wrap: nowrap; align-items: baseline; justify-content: center; max-width: 100%; white-space: nowrap; }
+
 /* 호선 칩 (#114): 작은 캡슐. 본문 클릭 = 선택, × = 제거. 두 버튼 모두 최소 터치 높이를 지킨다. */
 #elevatorFilter .custom-filter-chip { gap: 0; height: 34px; min-height: 34px; padding: 0 0 0 var(--sp-1); border-radius: 999px; }
 #elevatorFilter .custom-filter-body {
