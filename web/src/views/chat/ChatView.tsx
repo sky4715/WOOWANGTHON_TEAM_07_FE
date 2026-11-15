@@ -13,6 +13,7 @@ import { VoiceInput } from './voice/recognition/VoiceInput'
 import { SpeechControls, useChatSpeech } from './voice/tts'
 import { responseSpeechText } from './responseSpeechText'
 import { AnswerText } from './AnswerText'
+import { CollectedAt } from './CollectedAt'
 import { StationAnswerCards } from './StationAnswerCards'
 import { buildStationCards } from './stationCards'
 import './chat-accessibility.css'
@@ -170,7 +171,7 @@ export function ChatView() {
           const { cards, rest: actions } = buildStationCards((r.actions || []).filter((a) => a.type !== 'showAlternative'))
           return (
             <div key={m.key} className="msg bot">
-              {r.text ? <div className="bubble bubble-answer"><AnswerText text={r.text} /></div> : null}
+              {r.text ? <div className="bubble bubble-answer"><AnswerText text={r.text} /><CollectedAt iso={r.dataUpdatedAt} /></div> : null}
               <StationAnswerCards cards={cards} onOpenStation={openStation} />
               {/* mock 모드 AIAgent가 만든 신뢰된 카드 HTML. 서버 문자열은 절대 여기에 넣지 않는다. */}
               {r.html && !apiMode() ? <ExpiringHtml html={r.html} /> : null}

@@ -809,21 +809,17 @@
     return { name: tc.name, args: args };
   }
 
-  function dataTimeNote(iso) {
-    var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}:\d{2})/.exec(String(iso || ''));
-    return m ? m[1] + '년 ' + Number(m[2]) + '월 ' + Number(m[3]) + '일 ' + showTime(m[4]) + '에 수집된 정보예요.' : null;
-  }
-
+  // 수집 시각(metadata.data_updated_at)은 답변 본문에 섞지 않고 별도 필드로 넘긴다. 표시·포맷은 화면에서 한다.
   // 응답 모양이 다르면 null(= 오류 안내)
   function mapApiResponse(d) {
     if (!isObj(d) || typeof d.text !== 'string' || !d.text.trim()) return null;
-    var text = d.text;
-    var note = isObj(d.metadata) ? dataTimeNote(d.metadata.data_updated_at) : null;
-    if (note) text += '\n' + note;
     var tools = (Array.isArray(d.tool_calls) ? d.tool_calls : []).map(mapToolCall).filter(Boolean);
     var sugg = (Array.isArray(d.suggestions) ? d.suggestions : []).filter(function (x) { return typeof x === 'string' && x; });
     var acts = (Array.isArray(d.actions) ? d.actions : []).map(mapAction).filter(Boolean);
-    return resp(text, '', tools, sugg, acts); // html은 항상 빈 값
+    var out = resp(d.text, '', tools, sugg, acts); // html은 항상 빈 값
+    var collected = isObj(d.metadata) ? d.metadata.data_updated_at : null;
+    out.dataUpdatedAt = typeof collected === 'string' && collected ? collected : null;
+    return out;
   }
 
   async function apiProcess(text) {

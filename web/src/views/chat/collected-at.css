@@ -1,0 +1,9 @@
+/* 답변 말풍선 안 수집 시각: 본문과 6~8px 띄우고 오른쪽 정렬. --muted(#6B7280)는 흰 배경에서 대비 약 4.8:1 */
+.msg.bot .bubble .answer-collected {
+  margin: 8px 0 0;
+  text-align: right;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+  white-space: normal;
+}
