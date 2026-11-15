@@ -203,11 +203,8 @@ export function TimeView() {
             </div>
           </div>
           <div id="departureSummary" className="departure-summary">
-            <p className="departure-minutes-note">
-              {personal.signedIn && personal.saved ? '마이페이지에 저장한 예상 이동 시간으로 계산해요.' : '기본 예상 이동 시간으로 계산해요.'}
-            </p>
-            <p className="departure-minutes-summary">{`역까지 ${minutes.walkToStationMinutes}분 · 역 안 ${minutes.stationEntryMinutes}분 · 하차 후 ${minutes.exitWalkMinutes}분 · 여유 ${minutes.bufferMinutes}분`}</p>
-            {!personal.signedIn && <p className="departure-login-hint">로그인하면 마이페이지에서 예상 이동시간을 설정할 수 있어요.</p>}
+            <p className="departure-minutes-note">실제 이동 상황에 따라 소요시간이 달라질 수 있어요.</p>
+            <p className="departure-minutes-summary">{`여유시간: 역까지 ${minutes.walkToStationMinutes}분 · 역 안 ${minutes.stationEntryMinutes}분 · 하차 후 ${minutes.exitWalkMinutes}분 · 추가 여유 ${minutes.bufferMinutes}분`}</p>
           </div>
           <button className="btn btn-primary btn-block btn-main" type="submit" disabled={busy}>출발 시각 계산하기</button>
         </form>
