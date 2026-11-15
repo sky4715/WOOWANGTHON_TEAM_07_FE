@@ -168,10 +168,11 @@
 }
 .metro-svg .station-node.transfer .st-circle { stroke: #1F2937; stroke-width: 2.5; }
 .metro-svg .station-node:hover .st-circle { stroke-width: 3; }
-/* 엘리베이터 상태 = 역 노드 모양 (REQ-MAP-003). 노선 색 테두리는 모든 상태에서 남긴다 */
+/* 엘리베이터 상태 = 역 노드 모양 (REQ-MAP-003). 정상 역은 노선 색 테두리를 남긴다.
+   일부 운행·이용 불가 역은 커진 기본 원(채움)만 남기고 바깥 노선 색 고리는 그리지 않는다 */
 .metro-svg .station-node.st-ok .st-circle { fill: var(--ok); }
-.metro-svg .station-node.st-warn .st-circle { fill: var(--warn); stroke-width: 3; }
-.metro-svg .station-node.st-bad .st-circle { fill: var(--bad); stroke-width: 3; }
+.metro-svg .station-node.st-warn .st-circle { fill: var(--warn); stroke: none; }
+.metro-svg .station-node.st-bad .st-circle { fill: var(--bad); stroke: none; }
 .metro-svg .st-icon {
   fill: #fff;
   font-family: 'Material Symbols Rounded';
