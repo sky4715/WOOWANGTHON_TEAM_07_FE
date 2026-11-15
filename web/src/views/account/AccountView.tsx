@@ -125,6 +125,12 @@ export function AccountView() {
     setRenamingId(null)
   }, [currentTab])
 
+  // 쉬운 화면으로 이동: 설정은 건드리지 않고 해시만 바꾼다. 뒤로 가기로 돌아올 때 로그인 탭이 열리도록 현재 항목에 탭을 남긴다.
+  const goEasyScreen = () => {
+    window.history.replaceState({ ...(window.history.state ?? {}), tab: 'login' }, '', window.location.href)
+    window.location.hash = '#/easy'
+  }
+
   const refreshFavs = () => {
     if (!realAuth()) return
     setFavError('')
@@ -274,7 +280,13 @@ export function AccountView() {
         {/* ② 로그인됨: 마이페이지 */}
         <div id="mypageSection">
           <div id="authUser" className="auth-state" hidden={checking || !signedIn}>
-            <h2 className="view-title">마이페이지</h2>
+            <div className="mypage-header">
+              <button id="mypageEasyBtn" className="mypage-easy-btn" type="button" onClick={goEasyScreen}>
+                <Icon name="accessibility_new" />
+                <span>쉬운 화면으로 이동</span>
+              </button>
+              <h2 className="view-title">마이페이지</h2>
+            </div>
 
             {/* 프로필 */}
             <div className="card auth-card auth-profile-card">

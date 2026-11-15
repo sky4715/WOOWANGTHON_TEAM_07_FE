@@ -80,3 +80,54 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* 마이페이지 헤더: 쉬운 화면 이동 버튼(왼쪽) + 제목. 320~375px에서는 줄바꿈한다. */
+.mypage-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+.mypage-header .view-title {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mypage-easy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 16px 6px 6px;
+  border: 1px solid var(--ieum-blue, #3387f7);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ieum-navy, #172c54);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  max-width: 100%;
+}
+.mypage-easy-btn .ms {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  white-space: nowrap;
+  border-radius: 50%;
+  background: var(--ieum-blue, #3387f7);
+  color: #fff;
+  font-size: 20px;
+}
+.mypage-easy-btn:hover { background: #eef5ff; }
+.mypage-easy-btn:focus-visible { outline: 3px solid var(--ieum-blue-deep, #1759bb); outline-offset: 2px; }
+@media (max-width: 360px) {
+  .mypage-easy-btn { font-size: 14px; padding-right: 12px; }
+}
