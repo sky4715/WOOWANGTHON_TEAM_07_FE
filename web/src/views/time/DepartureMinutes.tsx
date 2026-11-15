@@ -14,7 +14,7 @@ export function DepartureMinutes({ value, onChange, showErrors }: {
       <div className="departure-preset-options">{presets.map((preset) =>
         <button type="button" className="departure-preset" key={preset.id} data-departure-preset={preset.id}
           aria-pressed={selected?.id === preset.id} onClick={() => onChange(toMinuteDraft(preset.minutes))}>
-          <span className="departure-preset-title">{selected?.id === preset.id ? '선택됨 · ' : ''}{preset.label}</span>
+          <span className="departure-preset-title">{preset.label}</span>
           <span className="departure-preset-description">{preset.description}</span>
         </button>)}</div>
       <p className="departure-minutes-note" id="departurePresetLimit">선택에 맞춘 예상값이에요. 실제 거리와 현장 상황에 따라 달라질 수 있어요.</p>
