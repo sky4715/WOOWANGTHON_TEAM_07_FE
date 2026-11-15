@@ -95,3 +95,8 @@ html[data-access-motion] *, html[data-access-motion] *::before, html[data-access
 .ieum-mode-btn:hover { box-shadow: var(--shadow); }
 .ieum-mode-btn:active { transform: scale(.98); }
 .ieum-mode-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* 쉬운 화면 홈 헤더(화살표 + 제목)는 화면 맞춤 설정 헤더와 같은 폭·같은 여백·같은 왼쪽 위치를 쓴다 (#144). */
+.easy-main-content { max-width: var(--welcome-form-width); }
+.easy-title-row { justify-content: flex-start; margin-block: var(--sp-5) var(--sp-3); }
+.easy-title-row h1 { font-size: var(--fs-heading); text-align: left; }
