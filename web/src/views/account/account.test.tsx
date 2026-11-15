@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import { StrictMode } from 'react'
 import App from '../../App'
+import { PREFERENCES_KEY } from '../welcome/preferences'
 
 const $ = (sel: string) => document.querySelector(sel) as HTMLElement
 const click = (sel: string) => act(() => { fireEvent.click($(sel)) })
@@ -72,5 +73,36 @@ describe('계정 탭', () => {
     expect($('.fontsize-chip[data-fontsize="xl"]').getAttribute('aria-pressed')).toBe('true')
     click('.fontsize-chip[data-fontsize="normal"]')
     expect(document.documentElement.hasAttribute('data-fontsize')).toBe(false)
+  })
+  it('마이페이지의 쉬운 화면 버튼은 설정을 바꾸지 않고 #/easy로 이동하며 로그인을 유지한다', async () => {
+    const saved = JSON.stringify({ version: 1, font: 'xl', contrast: false, simple: false, touch: false, motion: false, stepFree: false })
+    localStorage.setItem(PREFERENCES_KEY, saved)
+    localStorage.setItem('elevSubway.fontSize.v1', 'xl')
+    window.history.replaceState(null, '', '/#/main')
+    mount()
+    click('[data-provider="google"]')
+    await act(async () => { await Promise.resolve() })
+    const button = $('#mypageEasyBtn')
+    expect(button.tagName).toBe('BUTTON')
+    expect(button.textContent).toContain('쉬운 화면으로 이동')
+    expect($('#authUser .view-title').textContent).toBe('마이페이지')
+    click('#mypageEasyBtn')
+    expect(window.location.hash).toBe('#/easy')
+    expect(window.AuthService.getSession()).toBeTruthy()
+    expect(localStorage.getItem(PREFERENCES_KEY)).toBe(saved)
+    expect(localStorage.getItem('elevSubway.fontSize.v1')).toBe('xl')
+  })
+
+  it('저장된 설정이 없어도 쉬운 화면 이동은 설정 저장소와 글자 크기를 바꾸지 않는다', async () => {
+    localStorage.setItem('elevSubway.fontSize.v1', 'xl')
+    window.history.replaceState(null, '', '/#/main')
+    mount()
+    click('[data-provider="google"]')
+    await act(async () => { await Promise.resolve() })
+    click('#mypageEasyBtn')
+    expect(window.location.hash).toBe('#/easy')
+    expect(localStorage.getItem(PREFERENCES_KEY)).toBeNull()
+    expect(localStorage.getItem('elevSubway.fontSize.v1')).toBe('xl')
+    expect(window.AuthService.getSession()).toBeTruthy()
   })
 })

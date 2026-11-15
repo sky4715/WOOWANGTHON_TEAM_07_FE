@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { IeumLogo } from '../../components/IeumLogo'
 import App from '../../App'
 import { TABS, type TabName } from '../../app/context'
+import { readFontSize } from '../account/favorites'
 import { applyPreferences, defaultPreferences, readPreferences, savePreferences, type Preferences } from './preferences'
 import './welcome.css'
 
@@ -29,6 +30,15 @@ function readRoute() {
 function modePreferences(easy: boolean): Preferences {
   return { ...defaultPreferences(), font: easy ? 'lg' : 'normal', simple: easy, touch: easy, motion: easy }
 }
+// 저장된 설정이 없을 때도 글자 크기는 이 브라우저에 기록된 값을 그대로 쓴다(모드 기본값으로 덮어쓰지 않는다).
+function unsavedModePreferences(easy: boolean): Preferences {
+  return { ...modePreferences(easy), font: readFontSize() }
+}
+// 마이페이지의 "쉬운 화면으로 이동" 뒤 뒤로 가기로 돌아온 노선도 entry는 로그인 탭을 기억한다.
+function mainTabFromHistory(): TabName {
+  const state = window.history.state as { tab?: unknown } | null
+  return state && typeof state === 'object' && state.tab === 'login' ? 'login' : 'map'
+}
 
 export default function Welcome() {
   const [route, setRoute] = useState(readRoute)
@@ -54,11 +64,11 @@ export default function Welcome() {
   }, [])
   useEffect(() => {
     // 루트 접속에서는 저장값으로 랜딩을 건너뛰지 않는다.
-    applyPreferences(customize ? draft : landing ? modePreferences(false) : selected || modePreferences(easy))
+    applyPreferences(customize ? draft : landing ? modePreferences(false) : selected || unsavedModePreferences(easy))
   }, [easy, customize, draft, selected, landing])
   useEffect(() => {
     if (showApp) {
-      const tab = route === '/main' ? 'map' : route.slice(6)
+      const tab = route === '/main' ? mainTabFromHistory() : route.slice(6)
       const switchTab = window.App?.switchTab
       if (typeof switchTab === 'function') switchTab(tab)
       document.querySelector<HTMLElement>('#phone .tab.active')?.focus()
