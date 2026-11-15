@@ -103,24 +103,29 @@ export default function Welcome() {
     </div>}
     {customize && <div className="welcome-shell" data-page="customize">
       <main className="customize-main">
-        <a className="customize-back" href="#/" onClick={(event) => { event.preventDefault(); navigate('/') }}>← 시작 화면으로</a>
-        <h1 ref={heading} tabIndex={-1}>나에게 편한 화면 만들기</h1>
+        <header className="customize-header">
+          <button className="customize-back" type="button" aria-label="시작 화면으로 이동" onClick={() => navigate('/')}><span aria-hidden="true">←</span></button>
+          <h1 ref={heading} tabIndex={-1}>나에게 편한 화면 만들기</h1>
+        </header>
         <p className="welcome-lead">필요한 도움을 골라주세요. 여러 개를 함께 선택해도 괜찮아요.</p>
         <form onSubmit={(event) => { event.preventDefault(); choose(true) }}>
-          <fieldset><legend>읽기 편한 글자 크기</legend><div className="customize-fonts">{fontOptions.map(([value, label]) => <label key={value}><input type="radio" name="font" checked={draft.font === value} onChange={() => setDraft({ ...draft, font: value })}/><span>{label}</span></label>)}</div><p className="customize-sample">이 글씨가 편하게 보이시나요?</p></fieldset>
-          <fieldset><legend>필요한 도움</legend><div className="customize-options">{options.map((option) => <label key={option.key}><input type="checkbox" checked={draft[option.key]} onChange={(event) => setDraft({ ...draft, [option.key]: event.target.checked })}/><span><strong>{option.title}</strong><span>{option.description}</span></span></label>)}</div></fieldset>
+          <fieldset className="customize-card"><legend>읽기 편한 글자 크기</legend><div className="customize-fonts">{fontOptions.map(([value, label]) => <label key={value}><input type="radio" name="font" checked={draft.font === value} onChange={() => setDraft({ ...draft, font: value })}/><span>{label}</span></label>)}</div><p className="customize-sample">이 글씨가 편하게 보이시나요?</p></fieldset>
+          <fieldset className="customize-card"><legend>필요한 도움이 무엇인가요?</legend><div className="customize-options">{options.map((option) => <label key={option.key}><input type="checkbox" checked={draft[option.key]} onChange={(event) => setDraft({ ...draft, [option.key]: event.target.checked })}/><span><strong>{option.title}</strong><span>{option.description}</span></span></label>)}</div></fieldset>
           <p className="welcome-hint">선택한 설정은 이 브라우저에만 저장해요. 나이나 장애 정보는 입력하지 않아요.</p>
           <button className="customize-submit" type="submit">이 설정으로 시작하기 →</button>
         </form>
       </main>
     </div>}
     {easyHome && <div className="easy-main-shell" data-page="easy-main">
-      <header className="easy-main-header"><span className="welcome-brand">이음 <span className="easy-mode-badge">쉬운 화면</span></span><span className="easy-main-links"><a href="#/customize" onClick={(event) => { event.preventDefault(); setDraft(selected || modePreferences(true)); navigate('/customize') }}>화면 맞춤 설정</a><a href="#/" onClick={(event) => { event.preventDefault(); navigate('/') }}>화면 다시 선택</a></span></header>
       <main className="easy-main-content">
         <h1 ref={heading} tabIndex={-1}>무엇을 도와드릴까요?</h1>
         <p className="welcome-lead">이용할 기능을 눌러주세요.</p>
         {notice && <p role="status">{notice}</p>}
         <div className="welcome-tasks">{tasks.map((task) => <button type="button" key={task.tab} onClick={() => navigate('/easy/' + task.tab)}><span className="welcome-number" aria-hidden="true">{task.number}</span><span><strong>{task.title}</strong><span>{task.description}</span></span><span aria-hidden="true">→</span></button>)}</div>
+        <div className="easy-secondary-actions">
+          <button type="button" onClick={() => { setDraft(selected || modePreferences(true)); navigate('/customize') }}>화면 맞춤 설정</button>
+          <button type="button" onClick={() => navigate('/')}>화면 다시 선택</button>
+        </div>
         <p className="easy-main-note">엘리베이터 상태만으로 전체 경로의 접근성을 보장하지 않아요. 출입구와 환승 구간도 확인해 주세요.</p>
       </main>
     </div>}
