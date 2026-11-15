@@ -67,7 +67,7 @@ try {
   await page.locator('.welcome-tasks button:first-child').click()
   await page.waitForSelector('#view-elevator.active')
   assert.equal(await page.$('.welcome-return'), null)
-  await page.click('.easy-navigation a')
+  await page.evaluate(() => { location.hash = '#/easy' })
   await page.waitForSelector('[data-page="easy-main"]')
   await page.click('.easy-title-row .customize-back')
   await page.waitForSelector('.ieum-mode-basic')

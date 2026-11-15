@@ -98,7 +98,7 @@ export default function Welcome() {
 
   return <>
     <div className="welcome-app" hidden={!showApp}>
-      {appStarted && <App welcomeControl={easy ? <nav className="easy-navigation" aria-label="쉬운 화면 탐색"><span>쉬운 화면</span><a href="#/easy" onClick={(event) => { event.preventDefault(); navigate('/easy') }}>쉬운 화면 홈</a></nav> : undefined} />}
+      {appStarted && <App />}
       {showApp && notice && <p className="access-notice" role="status">{notice}</p>}
     </div>
     {landing && <div className="welcome-shell ieum-landing" data-page="landing">
