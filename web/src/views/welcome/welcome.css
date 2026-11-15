@@ -5,7 +5,9 @@
   --welcome-choice-width: 52rem;
   --ieum-navy: #172C54;
   --ieum-landing-logo-width: clamp(240px, 70vw, 440px);
-  --ieum-choice-width: 26rem;
+  --ieum-choice-width: 21rem;
+  --ieum-choice-height: 48px;
+  --ieum-landing-gap: 28px;
 }
 .welcome-app { height: 100%; }
 .welcome-shell, .easy-main-shell { position: fixed; inset: 0; overflow: auto; padding: var(--sp-6); padding-bottom: calc(var(--sp-6) + var(--safe-bottom)); color: var(--text); }
@@ -62,14 +64,15 @@ html[data-access-motion] *, html[data-access-motion] *::before, html[data-access
 .easy-main-content h1:focus, .customize-main h1:focus { outline: none; }
 .easy-main-links { display: inline-flex; flex-wrap: wrap; gap: var(--sp-2); }
 
-/* 이음 랜딩: 로고와 두 선택 버튼만 둔다 (#92) */
+/* 이음 랜딩: 로고와 두 선택 버튼만 둔다 (#92). 로고+버튼 묶음을 랜딩 영역의 가운데에 둔다 (#106) */
 .welcome-shell.ieum-landing { align-items: center; padding: var(--sp-4); padding-bottom: calc(var(--sp-8) + var(--safe-bottom)); background: linear-gradient(180deg, var(--surface) 0%, var(--primary-tint) 100%); }
-.ieum-landing-main { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: var(--welcome-width); min-height: 0; }
-.ieum-landing-logo { flex: 1; display: grid; place-items: center; width: 100%; margin: 0; padding-block: var(--sp-8); }
+.ieum-landing-main { flex: 1; display: flex; flex-direction: column; width: 100%; max-width: var(--welcome-width); min-height: 0; }
+.ieum-landing-group { display: flex; flex-direction: column; align-items: center; width: 100%; margin: auto 0; }
+.ieum-landing-logo { display: grid; place-items: center; width: 100%; margin: 0; padding: 0; }
 .ieum-landing-logo:focus { outline: none; }
 .ieum-landing-logo .ieum-logo { width: var(--ieum-landing-logo-width); height: auto; }
-.ieum-mode-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); width: min(100%, var(--ieum-choice-width)); }
-.ieum-mode-btn { display: grid; place-items: center; min-height: var(--welcome-touch); padding: var(--sp-3) var(--sp-4); border: 2px solid var(--ieum-navy); border-radius: var(--radius-sm); font-size: var(--fs-title); font-weight: var(--fw-bold); line-height: var(--lh-title); text-align: center; cursor: pointer; transition: transform .15s var(--ease), background-color .15s var(--ease), box-shadow .15s var(--ease); }
+.ieum-mode-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); width: min(100%, var(--ieum-choice-width)); margin-top: var(--ieum-landing-gap); }
+.ieum-mode-btn { display: grid; place-items: center; min-width: 0; min-height: var(--ieum-choice-height); padding: var(--sp-2) var(--sp-3); border: 2px solid var(--ieum-navy); border-radius: var(--radius-sm); font-size: var(--fs-title); font-weight: var(--fw-bold); line-height: var(--lh-title); text-align: center; cursor: pointer; transition: transform .15s var(--ease), background-color .15s var(--ease), box-shadow .15s var(--ease); }
 .ieum-mode-basic { color: var(--ieum-navy); background: var(--surface); }
 .ieum-mode-easy { color: var(--on-primary); background: var(--primary); border-color: var(--primary); }
 .ieum-mode-basic:hover { background: var(--primary-tint); }
