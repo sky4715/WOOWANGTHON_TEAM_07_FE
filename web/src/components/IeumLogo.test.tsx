@@ -14,6 +14,15 @@ it('원본 곡선 경로와 색상을 유지한다', () => {
   expect(b?.getAttribute('stroke')).toBe('#1759BB')
 })
 
+it('이음 워드마크는 폰트 의존 텍스트가 아닌 벡터 패스로 그린다', () => {
+  const { container } = render(<IeumLogo />)
+  const word = container.querySelector('.ieum-logo-word')
+  expect(word?.tagName.toLowerCase()).toBe('path')
+  expect(word?.getAttribute('d')?.startsWith('M')).toBe(true)
+  expect(container.querySelector('text.ieum-logo-word')).toBeNull()
+  expect(container.querySelector('text.ieum-logo-slogan')?.textContent).toBe('모두의 이동을 잇다')
+})
+
 it('접근 가능한 이름과 문구를 제공한다', () => {
   const { container } = render(<IeumLogo />)
   expect(screen.getByRole('img', { name: '이음 — 모두의 이동을 잇다' })).toBeTruthy()
