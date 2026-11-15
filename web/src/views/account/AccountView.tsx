@@ -176,11 +176,11 @@ export function AccountView() {
         <div id="mypageSection">
           <div id="authUser" className="auth-state" hidden={checking || !signedIn}>
             <div className="mypage-header">
+              <h2 className="view-title">마이페이지</h2>
               <button id="mypageEasyBtn" className="mypage-easy-btn" type="button" onClick={goEasyScreen}>
                 <Icon name="accessibility_new" />
                 <span>쉬운 화면으로 이동</span>
               </button>
-              <h2 className="view-title">마이페이지</h2>
             </div>
 
             {/* 프로필 */}

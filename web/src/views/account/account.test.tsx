@@ -62,9 +62,9 @@ describe('계정 탭', () => {
     const btn = document.getElementById('mypageEasyBtn')
     expect(btn).not.toBeNull()
     expect(btn?.textContent).toContain('쉬운 화면으로 이동')
-    // 제목보다 앞(왼쪽)에 있다
+    // 제목 오른쪽에 있다 (사용자 요청: 마이페이지 헤더 우측)
     const title = document.querySelector('#view-login .mypage-header h2') as HTMLElement
-    expect(btn!.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(title.compareDocumentPosition(btn!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     // 마이페이지 밖의 탭 어디에도 이 버튼이나 같은 문구의 버튼이 없다
     act(() => { window.App!.switchTab('map') })
     for (const tab of ['map', 'elevator', 'time', 'chat']) {
