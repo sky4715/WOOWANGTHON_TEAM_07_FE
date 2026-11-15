@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { IeumLogo } from '../../components/IeumLogo'
 import App from '../../App'
 import { TABS, type TabName } from '../../app/context'
 import { applyPreferences, defaultPreferences, readPreferences, savePreferences, type Preferences } from './preferences'
@@ -69,41 +70,34 @@ export default function Welcome() {
     setRoute(next)
     window.location.hash = next
   }
-  const choose = (simple: boolean) => {
-    const value = simple ? draft : modePreferences(false)
+  // 화면을 고르면 한 번만 이동한다(연타해도 저장·이동은 한 번). 화면이 바뀌면 다시 풀린다.
+  const startedRef = useRef(false)
+  useEffect(() => { startedRef.current = false }, [route])
+  const start = (value: Preferences) => {
+    if (startedRef.current) return
+    startedRef.current = true
     const stored = savePreferences(value)
     setSelected(value)
     setNotice(stored ? '' : '선택한 화면으로 이용할 수 있어요. 이 브라우저에는 설정이 저장되지 않아요.')
     navigate(value.simple || value.stepFree ? '/easy' : '/main')
   }
+  const choose = (simple: boolean) => start(simple ? draft : modePreferences(false))
+  // 쉬운 화면: 이미 쉬운 설정을 저장했다면 그 값을 쓰고, 아니면 쉬운 화면 기본 설정(큰 글씨·큰 버튼·움직임 줄이기)을 적용한다.
+  const chooseEasy = () => start(selected && (selected.simple || selected.stepFree) ? selected : modePreferences(true))
 
   return <>
     <div className="welcome-app" hidden={!showApp}>
       {appStarted && <App welcomeControl={easy ? <nav className="easy-navigation" aria-label="쉬운 화면 탐색"><span>쉬운 화면</span><a href="#/easy" onClick={(event) => { event.preventDefault(); navigate('/easy') }}>쉬운 화면 홈</a></nav> : undefined} />}
       {showApp && notice && <p className="access-notice" role="status">{notice}</p>}
     </div>
-    {landing && <div className="welcome-shell" data-page="landing">
-      <main className="welcome-main">
-        <section className="welcome-intro">
-          <h1 className="landing-logo" ref={heading} tabIndex={-1}>
-            <span className="landing-logo-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="10" y="14" width="28" height="29" rx="5"/><path d="M24 15v27M16 8l4-4 4 4m0 0 4 4 4-4M17 27v6m14-6v6" strokeLinecap="round" strokeLinejoin="round"/></svg></span>
-            엘리베이터 지하철
-          </h1>
-          <p className="welcome-lead">모두의 편안한 이동</p>
-          <div className="mode-choices" aria-label="이용할 화면 선택">
-            <button className="mode-choice mode-choice-basic" type="button" onClick={() => choose(false)}>
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m4 7 8-3 8 4 8-3v22l-8 3-8-4-8 3zM12 4v22M20 8v22" strokeLinejoin="round"/></svg>
-              <strong>기본 화면으로 시작</strong><span>지하철 노선도를 중심으로<br />역과 이동 정보를 살펴봐요.</span><span className="mode-choice-action" aria-hidden="true">기본 화면 들어가기 →</span>
-            </button>
-            <button className="mode-choice mode-choice-custom" type="button" onClick={() => { setDraft(selected || modePreferences(true)); navigate('/customize') }}>
-              <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M4 10h24M4 23h24M12 5v10m9 3v10" strokeLinecap="round"/></svg>
-              <strong>나에게 맞게 시작</strong><span>글자 크기와 버튼, 대비를<br />나에게 편하게 맞춰요.</span><span className="mode-choice-action" aria-hidden="true">맞춤 화면 만들기 →</span>
-            </button>
-          </div>
-          <p className="welcome-hint">두 화면 모두 로그인 없이 이용할 수 있어요.</p>
-        </section>
+    {landing && <div className="welcome-shell ieum-landing" data-page="landing">
+      <main className="ieum-landing-main">
+        <h1 className="ieum-landing-logo" ref={heading} tabIndex={-1}><IeumLogo /></h1>
+        <div className="ieum-mode-choices" role="group" aria-label="이용할 화면 선택">
+          <button className="ieum-mode-btn ieum-mode-basic" type="button" onClick={() => choose(false)}>기본 화면</button>
+          <button className="ieum-mode-btn ieum-mode-easy" type="button" onClick={chooseEasy}>쉬운 화면</button>
+        </div>
       </main>
-      <footer className="welcome-footer">서울 지하철 1–8호선 · 엘리베이터 상태 확인과 출발 시각 안내</footer>
     </div>}
     {customize && <div className="welcome-shell" data-page="customize">
       <main className="customize-main">
@@ -119,7 +113,7 @@ export default function Welcome() {
       </main>
     </div>}
     {easyHome && <div className="easy-main-shell" data-page="easy-main">
-      <header className="easy-main-header"><span className="welcome-brand">엘리베이터 지하철 <span className="easy-mode-badge">쉬운 화면</span></span><a href="#/" onClick={(event) => { event.preventDefault(); navigate('/') }}>화면 다시 선택</a></header>
+      <header className="easy-main-header"><span className="welcome-brand">이음 <span className="easy-mode-badge">쉬운 화면</span></span><span className="easy-main-links"><a href="#/customize" onClick={(event) => { event.preventDefault(); setDraft(selected || modePreferences(true)); navigate('/customize') }}>화면 맞춤 설정</a><a href="#/" onClick={(event) => { event.preventDefault(); navigate('/') }}>화면 다시 선택</a></span></header>
       <main className="easy-main-content">
         <h1 ref={heading} tabIndex={-1}>무엇을 도와드릴까요?</h1>
         <p className="welcome-lead">이용할 기능을 눌러주세요.</p>
