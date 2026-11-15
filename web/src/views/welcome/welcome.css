@@ -100,3 +100,8 @@ html[data-access-motion] *, html[data-access-motion] *::before, html[data-access
 .easy-main-content { max-width: var(--welcome-form-width); }
 .easy-title-row { justify-content: flex-start; margin-block: var(--sp-5) var(--sp-3); }
 .easy-title-row h1 { font-size: var(--fs-heading); text-align: left; }
+
+/* 쉬운 화면 홈: 제목은 가운데, 화살표만 맞춤 설정 화살표 위치(같은 컨테이너의 왼쪽 위)에 둔다 (#148). */
+.easy-title-row { position: relative; display: block; text-align: center; margin-block: var(--sp-5) var(--sp-3); }
+.easy-title-row .customize-back { position: absolute; top: 0; left: 0; }
+.easy-title-row h1 { font-size: var(--fs-heading); text-align: center; padding-inline: 56px; }
