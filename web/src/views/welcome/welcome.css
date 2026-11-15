@@ -21,24 +21,31 @@
 .customize-main { width: 100%; max-width: var(--welcome-form-width); margin-inline: auto; }
 .customize-main h1 { font-size: var(--fs-heading); margin-block: var(--sp-5) var(--sp-3); }
 .customize-main h1:focus { outline: none; }
-.customize-back { display: inline-flex; align-items: center; min-height: var(--tap-main); color: var(--primary-text); }
-.customize-main fieldset { padding: 0; margin: var(--sp-8) 0; min-width: 0; border: 0; }
+.customize-header { display: flex; align-items: center; gap: var(--sp-3); margin-block: var(--sp-5) var(--sp-3); }
+.customize-header h1 { margin: 0; font-size: var(--fs-heading); }
+.customize-back { display: grid; place-items: center; flex: none; width: 48px; height: 48px; min-width: 48px; min-height: 48px; padding: 0; border: 2px solid var(--border-strong); border-radius: 50%; color: var(--primary-text); background: var(--surface); font-size: var(--fs-title); line-height: 1; cursor: pointer; }
+.customize-back:hover { background: var(--primary-tint); }
+.customize-back:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.customize-main form { display: flex; flex-direction: column; gap: var(--sp-5); margin-top: var(--sp-6); }
+.customize-main fieldset.customize-card { padding: var(--sp-5); margin: 0; min-width: 0; border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); }
 .customize-main legend { font-size: var(--fs-title); font-weight: var(--fw-bold); margin-bottom: var(--sp-4); }
 .customize-fonts { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .customize-fonts label, .customize-options label { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--welcome-touch); padding: var(--sp-4); border: 2px solid var(--border-strong); border-radius: var(--radius-sm); cursor: pointer; }
 .customize-fonts label:has(:checked), .customize-options label:has(:checked) { border-color: var(--primary-text); background: var(--primary-tint); }
 .customize-main input { flex: none; width: var(--icon-lg); height: var(--icon-lg); margin: 0; accent-color: var(--primary-text); }
-.customize-sample { padding: var(--sp-5); margin-top: var(--sp-4); background: var(--surface-2); border-radius: var(--radius-sm); }
+/* 제목과 안내 문구 사이는 8px로 맞춘다. 카드 안쪽 위 여백(--sp-5)만큼 안내 문구를 끌어올린다 (fieldset은 제목 아래 여백을 따로 두기 때문) */
+.customize-main legend.customize-legend-help { margin-bottom: var(--sp-2); }
+.customize-help-text { margin: calc(var(--sp-5) * -1) 0 var(--sp-3); color: var(--text-2); font-size: var(--fs-label); line-height: var(--lh-body); }
 .customize-options { display: grid; gap: var(--sp-3); }
 .customize-options strong, .customize-options strong + span { display: block; }
 .customize-options strong + span { margin-top: var(--sp-1); font-size: var(--fs-label); color: var(--text-2); }
 .customize-submit { display: block; width: 100%; min-height: var(--welcome-touch); margin-block: var(--sp-5); padding: var(--sp-4); background: var(--primary); color: var(--on-primary); font-weight: var(--fw-bold); border-radius: var(--radius-sm); }
 .easy-main-shell { background: var(--bg); }
-.easy-main-header { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; gap: var(--sp-3); max-width: var(--welcome-width); margin-inline: auto; padding-bottom: var(--sp-6); border-bottom: 1px solid var(--border-strong); }
-.easy-main-header a, .easy-navigation a { display: inline-flex; align-items: center; min-height: var(--tap-main); padding: var(--sp-2); color: var(--primary-text); text-underline-offset: var(--sp-1); }
-.easy-mode-badge { padding: var(--sp-1) var(--sp-3); border-radius: var(--radius-sm); color: var(--primary-text); background: var(--primary-tint); font-size: var(--fs-label); }
-.easy-main-content { max-width: var(--welcome-choice-width); margin: var(--sp-8) auto; text-align: center; }
+.easy-navigation a { display: inline-flex; align-items: center; min-height: var(--tap-main); padding: var(--sp-2); color: var(--primary-text); text-underline-offset: var(--sp-1); }
+.easy-main-content { max-width: var(--welcome-choice-width); margin: 0 auto; text-align: center; }
 .easy-main-content h1 { font-size: var(--fs-display); line-height: var(--lh-title); margin-bottom: var(--sp-4); }
+.easy-title-row { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
+.easy-title-row h1 { min-width: 0; margin: 0; }
 .welcome-tasks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); margin-block: var(--sp-8); }
 .welcome-tasks button { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-6); min-height: var(--tap-main); border: 2px solid var(--border-strong); border-radius: var(--radius); text-align: left; background: var(--surface); }
 .welcome-tasks button > span:nth-child(2) { flex: 1; }
@@ -46,6 +53,13 @@
 .welcome-number { color: var(--primary-text); font-family: var(--mono); font-size: var(--fs-label); }
 .welcome-tasks strong { display: block; font-size: var(--fs-title); }
 .welcome-tasks strong + span { display: block; margin-top: var(--sp-2); color: var(--text-2); font-size: var(--fs-label); }
+.easy-secondary-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-3); margin-bottom: var(--sp-6); }
+.easy-secondary-actions button { min-height: 48px; padding: var(--sp-2) var(--sp-4); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--primary-text); background: var(--surface); font-size: var(--fs-label); font-weight: var(--fw-strong); cursor: pointer; }
+.easy-secondary-actions button:hover { background: var(--primary-tint); }
+.easy-secondary-actions button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.easy-secondary-actions .easy-customize-action { border-color: var(--primary); color: var(--on-primary); background: var(--primary); }
+.easy-secondary-actions .easy-customize-action:hover { border-color: var(--primary-press); color: var(--on-primary); background: var(--primary-press); }
+.easy-secondary-actions .easy-customize-action:active { transform: scale(.98); }
 .easy-main-note { color: var(--text-2); font-size: var(--fs-label); text-align: left; }
 .easy-navigation { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--sp-2); flex: none; padding: var(--sp-2) var(--sp-4); background: var(--surface); border-bottom: 1px solid var(--border-strong); font-size: var(--fs-label); }
 .access-notice { position: fixed; bottom: var(--tabbar-total); inset-inline: var(--sp-4); z-index: 51; padding: var(--sp-4); background: var(--surface); border: 2px solid var(--focus); }
@@ -59,10 +73,11 @@ html[data-access-motion] *, html[data-access-motion] *::before, html[data-access
   .welcome-tag { display: none; }
   .welcome-tasks { grid-template-columns: 1fr; }
   .welcome-tasks button { padding: var(--sp-4); }
+  .easy-secondary-actions { flex-direction: column; align-items: stretch; }
+  .easy-secondary-actions button { width: 100%; }
 }
 .welcome-hint { color: var(--text-2); font-size: var(--fs-label); }
 .easy-main-content h1:focus, .customize-main h1:focus { outline: none; }
-.easy-main-links { display: inline-flex; flex-wrap: wrap; gap: var(--sp-2); }
 
 /* 이음 랜딩: 로고와 두 선택 버튼만 둔다 (#92). 로고+버튼 묶음을 랜딩 영역의 가운데에 둔다 (#106) */
 .welcome-shell.ieum-landing { align-items: center; padding: var(--sp-4); padding-bottom: calc(var(--sp-8) + var(--safe-bottom)); background: linear-gradient(180deg, var(--surface) 0%, var(--primary-tint) 100%); }
@@ -80,3 +95,13 @@ html[data-access-motion] *, html[data-access-motion] *::before, html[data-access
 .ieum-mode-btn:hover { box-shadow: var(--shadow); }
 .ieum-mode-btn:active { transform: scale(.98); }
 .ieum-mode-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* 쉬운 화면 홈 헤더(화살표 + 제목)는 화면 맞춤 설정 헤더와 같은 폭·같은 여백·같은 왼쪽 위치를 쓴다 (#144). */
+.easy-main-content { max-width: var(--welcome-form-width); }
+.easy-title-row { justify-content: flex-start; margin-block: var(--sp-5) var(--sp-3); }
+.easy-title-row h1 { font-size: var(--fs-heading); text-align: left; }
+
+/* 쉬운 화면 홈: 제목은 가운데, 화살표만 맞춤 설정 화살표 위치(같은 컨테이너의 왼쪽 위)에 둔다 (#148). */
+.easy-title-row { position: relative; display: block; text-align: center; margin-block: var(--sp-5) var(--sp-3); }
+.easy-title-row .customize-back { position: absolute; top: 0; left: 0; }
+.easy-title-row h1 { font-size: var(--fs-display); text-align: center; padding-inline: 56px; }

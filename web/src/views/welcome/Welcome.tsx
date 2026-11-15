@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { IeumLogo } from '../../components/IeumLogo'
 import App from '../../App'
 import { TABS, type TabName } from '../../app/context'
+import { readFontSize } from '../account/favorites'
 import { applyPreferences, defaultPreferences, readPreferences, savePreferences, type Preferences } from './preferences'
 import './welcome.css'
 
@@ -29,6 +30,15 @@ function readRoute() {
 function modePreferences(easy: boolean): Preferences {
   return { ...defaultPreferences(), font: easy ? 'lg' : 'normal', simple: easy, touch: easy, motion: easy }
 }
+// 저장된 설정이 없을 때도 글자 크기는 이 브라우저에 기록된 값을 그대로 쓴다(모드 기본값으로 덮어쓰지 않는다).
+function unsavedModePreferences(easy: boolean): Preferences {
+  return { ...modePreferences(easy), font: readFontSize() }
+}
+// 마이페이지의 "쉬운 화면으로 이동" 뒤 뒤로 가기로 돌아온 노선도 entry는 로그인 탭을 기억한다.
+function mainTabFromHistory(): TabName {
+  const state = window.history.state as { tab?: unknown } | null
+  return state && typeof state === 'object' && state.tab === 'login' ? 'login' : 'map'
+}
 
 export default function Welcome() {
   const [route, setRoute] = useState(readRoute)
@@ -54,11 +64,11 @@ export default function Welcome() {
   }, [])
   useEffect(() => {
     // 루트 접속에서는 저장값으로 랜딩을 건너뛰지 않는다.
-    applyPreferences(customize ? draft : landing ? modePreferences(false) : selected || modePreferences(easy))
+    applyPreferences(customize ? draft : landing ? modePreferences(false) : selected || unsavedModePreferences(easy))
   }, [easy, customize, draft, selected, landing])
   useEffect(() => {
     if (showApp) {
-      const tab = route === '/main' ? 'map' : route.slice(6)
+      const tab = route === '/main' ? mainTabFromHistory() : route.slice(6)
       const switchTab = window.App?.switchTab
       if (typeof switchTab === 'function') switchTab(tab)
       document.querySelector<HTMLElement>('#phone .tab.active')?.focus()
@@ -78,6 +88,7 @@ export default function Welcome() {
     startedRef.current = true
     const stored = savePreferences(value)
     setSelected(value)
+    setDraft(value)
     setNotice(stored ? '' : '선택한 화면으로 이용할 수 있어요. 이 브라우저에는 설정이 저장되지 않아요.')
     navigate(value.simple || value.stepFree ? '/easy' : '/main')
   }
@@ -87,7 +98,7 @@ export default function Welcome() {
 
   return <>
     <div className="welcome-app" hidden={!showApp}>
-      {appStarted && <App welcomeControl={easy ? <nav className="easy-navigation" aria-label="쉬운 화면 탐색"><span>쉬운 화면</span><a href="#/easy" onClick={(event) => { event.preventDefault(); navigate('/easy') }}>쉬운 화면 홈</a></nav> : undefined} />}
+      {appStarted && <App />}
       {showApp && notice && <p className="access-notice" role="status">{notice}</p>}
     </div>
     {landing && <div className="welcome-shell ieum-landing" data-page="landing">
@@ -103,24 +114,31 @@ export default function Welcome() {
     </div>}
     {customize && <div className="welcome-shell" data-page="customize">
       <main className="customize-main">
-        <a className="customize-back" href="#/" onClick={(event) => { event.preventDefault(); navigate('/') }}>← 시작 화면으로</a>
-        <h1 ref={heading} tabIndex={-1}>나에게 편한 화면 만들기</h1>
+        <header className="customize-header">
+          <button className="customize-back" type="button" aria-label="쉬운 화면으로 돌아가기" onClick={() => navigate('/easy')}><span aria-hidden="true">←</span></button>
+          <h1 ref={heading} tabIndex={-1}>화면 맞춤 설정</h1>
+        </header>
         <p className="welcome-lead">필요한 도움을 골라주세요. 여러 개를 함께 선택해도 괜찮아요.</p>
         <form onSubmit={(event) => { event.preventDefault(); choose(true) }}>
-          <fieldset><legend>읽기 편한 글자 크기</legend><div className="customize-fonts">{fontOptions.map(([value, label]) => <label key={value}><input type="radio" name="font" checked={draft.font === value} onChange={() => setDraft({ ...draft, font: value })}/><span>{label}</span></label>)}</div><p className="customize-sample">이 글씨가 편하게 보이시나요?</p></fieldset>
-          <fieldset><legend>필요한 도움</legend><div className="customize-options">{options.map((option) => <label key={option.key}><input type="checkbox" checked={draft[option.key]} onChange={(event) => setDraft({ ...draft, [option.key]: event.target.checked })}/><span><strong>{option.title}</strong><span>{option.description}</span></span></label>)}</div></fieldset>
+          <fieldset className="customize-card"><legend>읽기 편한 글자 크기</legend><div className="customize-fonts">{fontOptions.map(([value, label]) => <label key={value}><input type="radio" name="font" checked={draft.font === value} onChange={() => setDraft({ ...draft, font: value })}/><span>{label}</span></label>)}</div></fieldset>
+          <fieldset className="customize-card"><legend className="customize-legend-help">필요한 도움이 무엇인가요?</legend><p className="customize-help-text">필요한 도움을 여러 개 선택할 수 있어요.</p><div className="customize-options">{options.map((option) => <label key={option.key}><input type="checkbox" checked={draft[option.key]} onChange={(event) => setDraft({ ...draft, [option.key]: event.target.checked })}/><span><strong>{option.title}</strong><span>{option.description}</span></span></label>)}</div></fieldset>
           <p className="welcome-hint">선택한 설정은 이 브라우저에만 저장해요. 나이나 장애 정보는 입력하지 않아요.</p>
           <button className="customize-submit" type="submit">이 설정으로 시작하기 →</button>
         </form>
       </main>
     </div>}
     {easyHome && <div className="easy-main-shell" data-page="easy-main">
-      <header className="easy-main-header"><span className="welcome-brand">이음 <span className="easy-mode-badge">쉬운 화면</span></span><span className="easy-main-links"><a href="#/customize" onClick={(event) => { event.preventDefault(); setDraft(selected || modePreferences(true)); navigate('/customize') }}>화면 맞춤 설정</a><a href="#/" onClick={(event) => { event.preventDefault(); navigate('/') }}>화면 다시 선택</a></span></header>
       <main className="easy-main-content">
-        <h1 ref={heading} tabIndex={-1}>무엇을 도와드릴까요?</h1>
+        <div className="easy-title-row">
+          <button className="customize-back" type="button" aria-label="시작 화면으로 이동" onClick={() => navigate('/')}><span aria-hidden="true">←</span></button>
+          <h1 ref={heading} tabIndex={-1}>무엇을 도와드릴까요?</h1>
+        </div>
         <p className="welcome-lead">이용할 기능을 눌러주세요.</p>
         {notice && <p role="status">{notice}</p>}
         <div className="welcome-tasks">{tasks.map((task) => <button type="button" key={task.tab} onClick={() => navigate('/easy/' + task.tab)}><span className="welcome-number" aria-hidden="true">{task.number}</span><span><strong>{task.title}</strong><span>{task.description}</span></span><span aria-hidden="true">→</span></button>)}</div>
+        <div className="easy-secondary-actions">
+          <button className="easy-customize-action" type="button" onClick={() => navigate('/customize')}>화면 맞춤 설정</button>
+        </div>
         <p className="easy-main-note">엘리베이터 상태만으로 전체 경로의 접근성을 보장하지 않아요. 출입구와 환승 구간도 확인해 주세요.</p>
       </main>
     </div>}

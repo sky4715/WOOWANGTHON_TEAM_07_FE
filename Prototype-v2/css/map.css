@@ -100,15 +100,19 @@
   place-items: center;
   flex: none;
   box-sizing: border-box;
-  width: 12px;
-  height: 12px;
+  /* 네 상태 모두 같은 16px 원. 지름·글자 크기를 고정 px로 둬서 글꼴 설정과 무관하게 원 크기가 바뀌지 않는다.
+     16px × 4 = 이전 가로 폭(12+12+20+20)과 같아 320px 화면에서도 한 줄에 든다 */
+  width: 16px;
+  height: 16px;
+  line-height: 0;
   border: 2px solid var(--muted-2);
   border-radius: 50%;
   background: #fff;
 }
+.map-legend .lg-node .ms { font-size: 12px; }
 .map-legend .lg-node.ok { background: var(--ok); }
 .map-legend .lg-node.warn,
-.map-legend .lg-node.bad { width: var(--icon-md); height: var(--icon-md); border: 0; color: #fff; }
+.map-legend .lg-node.bad { border: 0; color: #fff; }
 .map-legend .lg-node.warn { background: var(--warn); }
 .map-legend .lg-node.bad { background: var(--bad); }
 

@@ -132,6 +132,49 @@ describe('엘리베이터 탭', () => {
     expect($$('#elevatorList .station-row').length).toBe(before)
   })
 
+  it('필터는 항상 하나만 선택된다: 전체역·고장점검·호선 전환, 재클릭 시 전체역 (#121)', () => {
+    act(() => { window.AuthService.login('google') })
+    render(<App />)
+    fireEvent.click($('#addFilterBtn')!)
+    fireEvent.click($('[data-pick-line="2"]')!)
+    fireEvent.click($('[data-pick-line="3"]')!)
+    fireEvent.click($('#filterPickerDone')!)
+    const pressed = () => $$('#elevatorFilter [aria-pressed="true"]').map((b) => b.dataset.filter ?? b.dataset.selectLine)
+    const allLines = () => $$('#elevatorList .station-row').map((r) => r.dataset.id)
+    expect(pressed()).toEqual(['all'])
+    const all = allLines().length
+    fireEvent.click($('[data-filter="problem"]')!)
+    expect(pressed()).toEqual(['problem'])
+    fireEvent.click($('[data-select-line="2"]')!)
+    expect(pressed()).toEqual(['2'])
+    // 2호선을 고르면 고장·점검 선택이 풀리고, 2호선 역은 상태와 상관없이 모두 보인다
+    const line2 = allLines().filter((id) => window.ElevatorService.getStation(id!)?.lines.includes('2'))
+    expect(allLines()).toEqual(line2)
+    expect(line2.length).toBeGreaterThan(0)
+    fireEvent.click($('[data-select-line="3"]')!)
+    expect(pressed()).toEqual(['3'])
+    fireEvent.click($('[data-select-line="3"]')!)
+    expect(pressed()).toEqual(['all'])
+    expect(allLines().length).toBe(all)
+    // 선택된 호선을 X로 지우면 전체역, 선택되지 않은 호선을 지우면 선택 유지
+    fireEvent.click($('[data-select-line="2"]')!)
+    fireEvent.click($('[data-remove-filter="2"]')!)
+    expect(pressed()).toEqual(['all'])
+    fireEvent.click($('[data-select-line="3"]')!)
+    fireEvent.click($('[data-filter="all"]')!)
+    expect(pressed()).toEqual(['all'])
+    // 선택되지 않은 칩 X는 선택을 유지한다
+    fireEvent.click($('[data-select-line="3"]')!)
+    fireEvent.click($('[data-remove-filter="3"]')!)
+    expect(pressed()).toEqual(['all'])
+    // 호선 추가는 선택을 바꾸지 않는다
+    fireEvent.click($('[data-filter="problem"]')!)
+    fireEvent.click($('#addFilterBtn')!)
+    fireEvent.click($('[data-pick-line="5"]')!)
+    fireEvent.click($('#filterPickerDone')!)
+    expect(pressed()).toEqual(['problem'])
+  })
+
   it('고장·점검은 이용 불가·일부 운행만 포함하고 상태를 모르는 역은 제외한다 (#114)', () => {
     const es = liveService('AVAILABLE')
     vi.mocked(es.getStationStatus).mockImplementation((id) => id === 'cityhall' ? 'UNAVAILABLE' : id === 'jongno3' ? 'PARTIAL' : id === 'euljiro1' ? 'UNKNOWN' : 'AVAILABLE')

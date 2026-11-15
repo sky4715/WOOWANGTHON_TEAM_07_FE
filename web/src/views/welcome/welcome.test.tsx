@@ -2,6 +2,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import Welcome from './Welcome'
 import { PREFERENCES_KEY, readPreferences } from './preferences'
+import fs from 'node:fs'
+import path from 'node:path'
 
 beforeEach(() => { localStorage.clear(); window.history.replaceState(null, '', '/') })
 afterEach(() => {
@@ -35,7 +37,7 @@ it('쉬운 화면은 쉬운 설정을 적용해 쉬운 홈으로 들어가고 �
   expect(screen.getByRole('heading', { name: '무엇을 도와드릴까요?' })).toBeTruthy()
   expect(document.querySelector('[data-page="landing"]')).toBeNull()
   expect(readPreferences()).toMatchObject({ simple: true, font: 'lg', touch: true, motion: true })
-  fireEvent.click(screen.getByRole('link', { name: '화면 맞춤 설정' }))
+  fireEvent.click(screen.getByRole('button', { name: '화면 맞춤 설정' }))
   expect(window.location.hash).toBe('#/customize')
   fireEvent.click(screen.getByRole('radio', { name: '아주 크게' }))
   fireEvent.click(screen.getByRole('checkbox', { name: /높은 대비/ }))
@@ -44,7 +46,7 @@ it('쉬운 화면은 쉬운 설정을 적용해 쉬운 홈으로 들어가고 �
   expect(readPreferences()).toMatchObject({ simple: true, font: 'xl', touch: true, contrast: true })
   expect(document.documentElement.getAttribute('data-fontsize')).toBe('xl')
   expect(document.documentElement.hasAttribute('data-access-contrast')).toBe(true)
-  fireEvent.click(screen.getByRole('link', { name: '화면 다시 선택' }))
+  fireEvent.click(screen.getByRole('button', { name: '시작 화면으로 이동' }))
   expect(screen.getByRole('button', { name: '기본 화면' })).toBeTruthy()
   expect(screen.getByRole('button', { name: '쉬운 화면' })).toBeTruthy()
 })
@@ -79,4 +81,141 @@ it('저장이 막혀도 선택한 쉬운 화면을 이용할 수 있다', () => 
   fireEvent.click(screen.getByRole('button', { name: '쉬운 화면' }))
   expect(screen.getByRole('status').textContent).toContain('선택한 화면으로 이용')
   expect(screen.getByRole('button', { name: /엘리베이터 확인/ })).toBeTruthy()
+})
+it('쉬운 홈은 위쪽 설명 없이 제목부터 시작하고 예전 상단 링크가 없다', () => {
+  localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ version: 1, font: 'lg', simple: true, contrast: false, touch: true, motion: true, stepFree: false }))
+  window.history.replaceState(null, '', '/#/easy')
+  render(<Welcome />)
+  expect(document.querySelector('.easy-main-header')).toBeNull()
+  expect(document.querySelector('.easy-main-links')).toBeNull()
+  expect(screen.queryByText('쉬운 화면')).toBeNull()
+  expect(screen.queryByText('이음')).toBeNull()
+  const main = document.querySelector('.easy-main-content')
+  const row = main?.firstElementChild as HTMLElement
+  expect(row.classList.contains('easy-title-row')).toBe(true)
+  expect(row.querySelector('h1')?.textContent).toBe('무엇을 도와드릴까요?')
+  const buttons = within(main as HTMLElement).getAllByRole('button')
+  // 맨 앞은 제목 옆 화살표, 그다음 4개 작업 버튼, 마지막이 화면 맞춤 설정
+  expect(buttons[0].getAttribute('aria-label')).toBe('시작 화면으로 이동')
+  expect(buttons.slice(1, 5).map((button) => button.querySelector('strong')?.textContent)).toEqual(['엘리베이터 확인', '출발 시각 계산', '지하철 노선도', '궁금한 점 물어보기'])
+  expect(buttons.slice(5).map((button) => button.textContent)).toEqual(['화면 맞춤 설정'])
+  expect(main?.querySelector('.easy-main-note')).toBeTruthy()
+})
+it('쉬운 홈 제목 옆 화살표는 시작 화면으로 돌아간다', () => {
+  window.history.replaceState(null, '', '/#/easy')
+  render(<Welcome />)
+  const back = screen.getByRole('button', { name: '시작 화면으로 이동' })
+  const title = screen.getByRole('heading', { name: '무엇을 도와드릴까요?' })
+  // 화살표는 제목 왼쪽, 같은 줄(행)에 있다
+  expect(back.parentElement).toBe(title.parentElement)
+  expect(back.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(back.textContent).toBe('←')
+  fireEvent.click(back)
+  expect(window.location.hash).toBe('#/')
+  expect(screen.getByRole('button', { name: '기본 화면' })).toBeTruthy()
+})
+it('쉬운 홈에는 화면 다시 선택 버튼이 없다', () => {
+  window.history.replaceState(null, '', '/#/easy')
+  render(<Welcome />)
+  expect(screen.queryByRole('button', { name: '화면 다시 선택' })).toBeNull()
+  expect(screen.queryByText('화면 다시 선택')).toBeNull()
+})
+it('쉬운 홈의 화면 맞춤 설정 버튼은 파란 기본 색 버튼 스타일이고 맞춤 설정으로 이동한다', () => {
+  window.history.replaceState(null, '', '/#/easy')
+  render(<Welcome />)
+  const customize = screen.getByRole('button', { name: '화면 맞춤 설정' })
+  expect(customize.classList.contains('easy-customize-action')).toBe(true)
+  expect(customize.closest('.easy-secondary-actions')).toBeTruthy()
+  // 4개 작업 버튼 아래에 있다
+  const tasks = document.querySelector('.welcome-tasks') as HTMLElement
+  expect(tasks.compareDocumentPosition(customize) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  // 색과 상태(hover·focus·active)는 CSS에 있다. jsdom은 실제 계산 색을 내지 않으므로 규칙 문자열을 확인한다.
+  const rules = fs.readFileSync(path.resolve(__dirname, 'welcome.css'), 'utf8').replace(/\s+/g, ' ')
+  expect(rules).toContain('.easy-secondary-actions .easy-customize-action { border-color: var(--primary); color: var(--on-primary); background: var(--primary); }')
+  expect(rules).toContain('.easy-secondary-actions .easy-customize-action:hover { border-color: var(--primary-press); color: var(--on-primary); background: var(--primary-press); }')
+  expect(rules).toContain('.easy-secondary-actions .easy-customize-action:active')
+  expect(rules).toContain('.easy-secondary-actions button:focus-visible { outline: 3px solid var(--focus)')
+  fireEvent.click(customize)
+  expect(window.location.hash).toBe('#/customize')
+  expect(screen.getByRole('heading', { name: '화면 맞춤 설정' })).toBeTruthy()
+})
+it('쉬운 홈의 작업 버튼은 기존처럼 해당 기능 화면으로 이동한다', () => {
+  window.history.replaceState(null, '', '/#/easy')
+  render(<Welcome />)
+  fireEvent.click(screen.getByRole('button', { name: /지하철 노선도/ }))
+  expect(window.location.hash).toBe('#/easy/map')
+})
+it('맞춤 설정 화면의 화살표 버튼은 쉬운 홈으로 돌아가고 고른 글자 크기를 지우지 않는다', () => {
+  window.history.replaceState(null, '', '/#/customize')
+  render(<Welcome />)
+  const back = screen.getByRole('button', { name: '쉬운 화면으로 돌아가기' })
+  expect(back.textContent).toBe('←')
+  expect(screen.queryByRole('button', { name: '시작 화면으로 이동' })).toBeNull()
+  expect(screen.queryByText('← 시작 화면으로')).toBeNull()
+  fireEvent.click(screen.getByRole('radio', { name: '아주 크게' }))
+  fireEvent.click(back)
+  expect(window.location.hash).toBe('#/easy')
+  expect(screen.getByRole('heading', { name: '무엇을 도와드릴까요?' })).toBeTruthy()
+  expect(screen.queryByRole('button', { name: '기본 화면' })).toBeNull()
+  expect(localStorage.getItem(PREFERENCES_KEY)).toBeNull()
+  // 쉬운 홈에서 맞춤 설정으로 다시 들어가도 고른 글자 크기가 남아 있다
+  fireEvent.click(screen.getByRole('button', { name: '화면 맞춤 설정' }))
+  expect(window.location.hash).toBe('#/customize')
+  expect((screen.getByRole('radio', { name: '아주 크게' }) as HTMLInputElement).checked).toBe(true)
+})
+it('맞춤 설정 제목은 새 문구이고 예전 제목과 예전 샘플 문장은 없다', () => {
+  window.history.replaceState(null, '', '/#/customize')
+  render(<Welcome />)
+  expect(screen.getByRole('heading', { name: '화면 맞춤 설정' }).tagName).toBe('H1')
+  expect(screen.queryByText('나에게 편한 화면 만들기')).toBeNull()
+  expect(screen.queryByText('이 글씨가 편하게 보이시나요?')).toBeNull()
+  expect(document.querySelector('.customize-sample')).toBeNull()
+  // 글자 크기 카드는 라디오 선택지만 남는다
+  const fonts = screen.getByRole('group', { name: '읽기 편한 글자 크기' })
+  expect(within(fonts).getAllByRole('radio')).toHaveLength(4)
+  expect(fonts.querySelector('p')).toBeNull()
+})
+it('필요한 도움 카드에 여러 개 선택 가능 안내 문구가 제목 아래에 있다', () => {
+  window.history.replaceState(null, '', '/#/customize')
+  render(<Welcome />)
+  const help = screen.getByRole('group', { name: '필요한 도움이 무엇인가요?' })
+  const text = within(help).getByText('필요한 도움을 여러 개 선택할 수 있어요.')
+  expect(text.tagName).toBe('P')
+  expect(text.classList.contains('customize-help-text')).toBe(true)
+  // 안내 문구는 제목(legend) 밖에 있어서 그룹 이름은 제목만 쓴다
+  expect(help.querySelector('legend')?.textContent).toBe('필요한 도움이 무엇인가요?')
+  expect(within(help).getAllByRole('checkbox')).toHaveLength(5)
+})
+it('맞춤 설정은 두 개의 카드(글자 크기, 필요한 도움)로 나뉜다', () => {
+  window.history.replaceState(null, '', '/#/customize')
+  render(<Welcome />)
+  const fonts = screen.getByRole('group', { name: '읽기 편한 글자 크기' })
+  const help = screen.getByRole('group', { name: '필요한 도움이 무엇인가요?' })
+  expect(fonts.tagName).toBe('FIELDSET')
+  expect(help.tagName).toBe('FIELDSET')
+  expect(fonts.classList.contains('customize-card')).toBe(true)
+  expect(help.classList.contains('customize-card')).toBe(true)
+  expect(within(help).getAllByRole('checkbox')).toHaveLength(5)
+  expect(within(fonts).getAllByRole('radio')).toHaveLength(4)
+})
+it('필요한 도움 체크박스는 여러 개 고를 수 있고 쉬운 홈을 다녀와도 선택이 남는다', () => {
+  window.history.replaceState(null, '', '/#/customize')
+  render(<Welcome />)
+  // 처음 들어오면 간단한 첫 화면·큰 버튼·움직임 줄이기가 기본으로 켜져 있으므로, 꺼진 상태에서 시작하는 두 항목을 고른다
+  const contrast = screen.getByRole('checkbox', { name: /높은 대비/ }) as HTMLInputElement
+  const stepFree = screen.getByRole('checkbox', { name: /계단 이용 도움/ }) as HTMLInputElement
+  expect(contrast.checked).toBe(false)
+  expect(stepFree.checked).toBe(false)
+  fireEvent.click(contrast)
+  fireEvent.click(stepFree)
+  expect(contrast.checked).toBe(true)
+  expect(stepFree.checked).toBe(true)
+  // 화살표로 쉬운 홈에 갔다가 맞춤 설정으로 돌아온다
+  fireEvent.click(screen.getByRole('button', { name: '쉬운 화면으로 돌아가기' }))
+  expect(window.location.hash).toBe('#/easy')
+  fireEvent.click(screen.getByRole('button', { name: '화면 맞춤 설정' }))
+  expect(window.location.hash).toBe('#/customize')
+  expect((screen.getByRole('checkbox', { name: /높은 대비/ }) as HTMLInputElement).checked).toBe(true)
+  expect((screen.getByRole('checkbox', { name: /계단 이용 도움/ }) as HTMLInputElement).checked).toBe(true)
+  expect((screen.getByRole('checkbox', { name: /움직임 줄이기/ }) as HTMLInputElement).checked).toBe(true)
 })
