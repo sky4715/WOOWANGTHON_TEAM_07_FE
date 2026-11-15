@@ -10,12 +10,14 @@ import {
   STATUS_CLASS, statusIcon, statusLabel, stationStatus, yeok,
 } from '../../lib/stations'
 import { nowHHMM, showBeTime, showTime } from '../../lib/time'
-import { mockLines, setCustomFilters, useCustomFilters, useSignedIn } from './filterStore'
+import { setCustomFilters, useCustomFilters, useSignedIn } from './filterStore'
+import './elevator-filter.css'
 
+// 기본 필터: 전체역 · 고장(이용 불가) · 점검(일부 운행). 호선은 '+ 노선'으로 추가한다 (#103).
 const ELEV_FILTERS = [
   { id: 'all', label: '전체역' },
-  { id: 'problem', label: '고장·점검' },
-  { id: 'transfer', label: '환승역' },
+  { id: 'unavailable', label: '고장' },
+  { id: 'partial', label: '점검' },
 ]
 const STATUS_RANK: Record<string, number> = { UNAVAILABLE: 0, PARTIAL: 1, AVAILABLE: 2, UNKNOWN: 3 }
 
@@ -43,22 +45,12 @@ function stoppedWhere(stationId: string): string {
   return stopped.length ? stopped[0].location + (stopped.length > 1 ? ' 외 ' + (stopped.length - 1) + '곳' : '') : ''
 }
 
-function linesLabel(lines: string[]): string {
-  const n = lines.length
-  if (!n) return '호선'
-  if (n === 1) return lines[0] + '호선'
-  if (n === 2) return lines[0] + '·' + lines[1] + '호선'
-  return lines[0] + '·' + lines[1] + ' 외 ' + (n - 2)
-}
-
 export function ElevatorView() {
   const { currentTab, openStation, openSheet } = useApp()
   const version = useElevatorVersion()
   const signedIn = useSignedIn()
   const customFilters = useCustomFilters()
   const [filter, setFilter] = useState('all')
-  const [lines, setLines] = useState<string[]>([])
-  const [panelOpen, setPanelOpen] = useState(false)
   const [fadeHidden, setFadeHidden] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -83,16 +75,17 @@ export function ElevatorView() {
     return () => cancelAnimationFrame(id)
   }, [signedIn, customFilters, updateOverflow])
 
-  const lineMap = mockLines()
-  const lineIds = Object.keys(lineMap).sort((x, y) => Number(x) - Number(y))
+  const setFilterId = (id: string) => setFilter(id)
 
-  const setFilterId = (id: string) => { setFilter(id); if (id !== 'lines') setLines([]) }
-  const toggleLine = (id: string) => {
-    const next = lines.includes(id) ? lines.filter((x) => x !== id) : [...lines, id]
-    next.sort((a, b) => Number(a) - Number(b))
-    setLines(next)
-    setFilter(next.length ? 'lines' : 'all')
-  }
+  // 노선을 추가하면 새 칩과 '+ 노선'이 보이도록 오른쪽 끝으로 스크롤한다 (#103)
+  const prevCount = useRef(customFilters.length)
+  useEffect(() => {
+    if (customFilters.length > prevCount.current && scrollRef.current) {
+      const s = scrollRef.current
+      requestAnimationFrame(() => { s.scrollLeft = s.scrollWidth })
+    }
+    prevCount.current = customFilters.length
+  }, [customFilters.length])
 
   let updatedText: string
   if (!apiMode()) updatedText = showTime(nowHHMM(updatedAt)) + ' 기준'
@@ -137,9 +130,8 @@ export function ElevatorView() {
     const sl = x.station.lines || []
     if (activeCustom.length && !sl.some((id) => activeCustom.includes(id))) return false
     switch (filter) {
-      case 'problem': return x.status === 'PARTIAL' || x.status === 'UNAVAILABLE'
-      case 'transfer': return sl.length > 1
-      case 'lines': return sl.some((l) => lines.includes(l))
+      case 'unavailable': return x.status === 'UNAVAILABLE'
+      case 'partial': return x.status === 'PARTIAL'
       default: return true
     }
   })
@@ -165,21 +157,16 @@ export function ElevatorView() {
           </div>
           <div id="elevatorSummary" className="summary-grid">{summary}</div>
         </div>
-        {/* 상단 고정 필터 탭: 전체역 / 고장·점검 / 환승역 / 호선 ▼ (REQ-ELV-001, REQ-ELV-006) */}
-        <div id="elevatorFilter" className="filter-tabs" role="toolbar" aria-label="역 목록 거르기">
+        {/* 상단 고정 필터: 전체역 · 고장 · 점검 · (추가한 노선…) · + 노선. 한 줄, 필터 영역 안에서만 가로 스크롤 (#103) */}
+        <div id="elevatorFilter" className="filter-tabs elevator-filter" role="toolbar" aria-label="역 목록 거르기">
           <div id="elevatorFilterScroll" className="elevator-filter-scroll" tabIndex={0} role="region" aria-label="엘리베이터 필터 좌우 스크롤"
             ref={scrollRef} onScroll={updateOverflow}>
             <div className="elevator-filter-inner">
               <div className="filter-tabs-row">
                 {ELEV_FILTERS.map((x) => (
                   <button type="button" key={x.id} className={'filter-tab' + (filter === x.id ? ' active' : '')} data-filter={x.id}
-                    aria-pressed={filter === x.id} onClick={() => { setPanelOpen(false); setFilterId(x.id) }}>{x.label}</button>
+                    aria-pressed={filter === x.id} onClick={() => setFilterId(x.id)}>{x.label}</button>
                 ))}
-                <button type="button" id="elevLineBtn" className={'filter-tab' + (filter === 'lines' ? ' active' : '')} data-filter="lines"
-                  aria-pressed={filter === 'lines'} aria-expanded={panelOpen} aria-controls="elevLinePanel"
-                  onClick={() => setPanelOpen((o) => !o)}>
-                  <span className="tab-label">{linesLabel(lines)}</span><Icon name="expand_more" />
-                </button>
               </div>
               <span id="customFilterChips" className="custom-filter-slot" hidden={!signedIn}>
                 {signedIn && customFilters.map((lineId) => {
@@ -194,21 +181,13 @@ export function ElevatorView() {
                   )
                 })}
               </span>
+              <button type="button" className="chip-add-btn" id="addFilterBtn" hidden={!signedIn}
+                onClick={() => { if (signedIn) openSheet('filter', { stationId: null }, 'auto') }}>
+                <Icon name="add" />노선
+              </button>
             </div>
           </div>
           <span id="elevatorFilterFade" className="filter-fade" aria-hidden="true" hidden={fadeHidden}></span>
-          <button type="button" className="chip-add-btn" id="addFilterBtn" hidden={!signedIn}
-            onClick={() => { if (signedIn) openSheet('filter', { stationId: null }, 'auto') }}>
-            <Icon name="add" />노선
-          </button>
-          <div id="elevLinePanel" className="line-panel" role="group" aria-label="호선 고르기" hidden={!panelOpen}>
-            {lineIds.map((id) => (
-              <button type="button" key={id} className={'line-chip' + (lines.includes(id) ? ' active' : '')} data-line={id}
-                aria-pressed={lines.includes(id)} onClick={() => toggleLine(id)}>
-                <span className="line-dot" style={{ background: lineMap[id].color }}></span>{lineMap[id].name}
-              </button>
-            ))}
-          </div>
         </div>
         <div id="elevatorList" className="station-list">
           {!items.length ? <div className="empty">선택한 조건에 맞는 역이 없어요</div> : items.map((x) => {

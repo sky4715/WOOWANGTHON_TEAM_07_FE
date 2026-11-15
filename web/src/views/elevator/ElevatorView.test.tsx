@@ -34,11 +34,11 @@ describe('엘리베이터 탭', () => {
 
   it('설비 상세를 열기 전에도 BE 요약의 대수를 쓰고 고장 필터에 문제 역을 포함한다', () => {
     const es = liveService('AVAILABLE')
-    vi.mocked(es.getStationStatus).mockImplementation((id) => id === 'cityhall' ? 'PARTIAL' : 'AVAILABLE')
+    vi.mocked(es.getStationStatus).mockImplementation((id) => id === 'cityhall' ? 'UNAVAILABLE' : 'AVAILABLE')
     render(<App />)
     expect($('#elevatorList .station-row')?.textContent).toContain('설비 4대')
     expect($('#elevatorList')?.textContent).not.toContain('0/0대')
-    fireEvent.click($('[data-filter="problem"]')!)
+    fireEvent.click($('[data-filter="unavailable"]')!)
     expect($$('#elevatorList .station-row').map((r) => r.dataset.id)).toEqual(['cityhall'])
   })
 
@@ -68,7 +68,8 @@ describe('엘리베이터 탭', () => {
     render(<App />)
     expect($$('#elevatorSummary .summary-card').length).toBe(3)
     expect($('#elevUpdated')?.textContent).toMatch(/기준$/)
-    expect($$('#elevatorFilter .filter-tab').map((t) => t.getAttribute('data-filter'))).toEqual(['all', 'problem', 'transfer', 'lines'])
+    expect($$('#elevatorFilter .filter-tab').map((t) => t.getAttribute('data-filter'))).toEqual(['all', 'unavailable', 'partial'])
+    expect($('#elevLineBtn')).toBeNull()
     expect($$('#elevatorList .station-row[data-id]').length).toBeGreaterThan(0)
     expect($('#addFilterBtn')?.hidden).toBe(true)
   })
@@ -80,18 +81,26 @@ describe('엘리베이터 탭', () => {
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b))
   })
 
-  it('호선 칩: 선택하면 라벨이 바뀌고 해당 호선 역만 남는다', () => {
+  it('+ 노선으로 노선을 추가 순서대로 붙이고 칩으로 제거한다 (#103)', () => {
+    act(() => { window.AuthService.login('google') })
     render(<App />)
-    fireEvent.click($('#elevLineBtn')!)
-    expect($('#elevLinePanel')?.hidden).toBe(false)
-    fireEvent.click($('#elevLinePanel [data-line="2"]')!)
-    expect($('#elevLineBtn .tab-label')?.textContent).toBe('2호선')
+    const chips = () => $$('#customFilterChips [data-custom-filter]').map((c) => c.dataset.customFilter)
+    fireEvent.click($('#addFilterBtn')!)
+    fireEvent.click($('[data-pick-line="2"]')!)
+    fireEvent.click($('[data-pick-line="7"]')!)
+    fireEvent.click($('#filterPickerDone')!)
+    expect(chips()).toEqual(['2', '7'])
+    fireEvent.click($('#addFilterBtn')!)
+    fireEvent.click($('[data-pick-line="3"]')!)
+    fireEvent.click($('#filterPickerDone')!)
+    expect(chips()).toEqual(['2', '7', '3'])
+    // '+ 노선'은 스크롤 영역 안의 마지막 요소다
+    expect($('#elevatorFilterScroll .elevator-filter-inner')?.lastElementChild?.id).toBe('addFilterBtn')
+    fireEvent.click($('[data-remove-filter="7"]')!)
+    expect(chips()).toEqual(['2', '3'])
     const rows = $$('#elevatorList .station-row')
     expect(rows.length).toBeGreaterThan(0)
-    expect(rows.every((r) => window.ElevatorService.getStation(r.dataset.id!)?.lines.includes('2'))).toBe(true)
-    fireEvent.click($('#elevLinePanel [data-line="2"]')!)
-    expect($('#elevLineBtn .tab-label')?.textContent).toBe('호선')
-    expect($('[data-filter="all"]')?.getAttribute('aria-pressed')).toBe('true')
+    expect(rows.every((r) => window.ElevatorService.getStation(r.dataset.id!)?.lines.some((l) => l === '2' || l === '3'))).toBe(true)
   })
 
   it('행을 누르면 역 시트가 열린다', () => {
